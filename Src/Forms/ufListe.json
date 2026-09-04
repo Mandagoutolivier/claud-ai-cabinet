@@ -1,0 +1,12 @@
+{
+  "caption": "Choisir",
+  "width": 432,
+  "height": 372,
+  "controls": [
+    { "type": "TextBox", "name": "txtRecherche", "left": 12, "top": 10, "width": 396, "height": 22, "fontsize": 11 },
+    { "type": "ListBox", "name": "lstItems", "left": 12, "top": 40, "width": 396, "height": 250, "fontsize": 10 },
+    { "type": "CommandButton", "name": "btnNouveau", "left": 12, "top": 300, "width": 100, "height": 28, "caption": "Nouveau...", "visible": false, "fontsize": 10 },
+    { "type": "CommandButton", "name": "btnOK", "left": 222, "top": 300, "width": 90, "height": 28, "caption": "OK", "default": true, "fontsize": 10 },
+    { "type": "CommandButton", "name": "btnAnnuler", "left": 318, "top": 300, "width": 90, "height": 28, "caption": "Annuler", "cancel": true, "fontsize": 10 }
+  ]
+}

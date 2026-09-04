@@ -1,0 +1,8 @@
+{
+  "caption": "Veuillez patienter",
+  "width": 330,
+  "height": 96,
+  "controls": [
+    { "type": "Label", "name": "lblMsg", "left": 16, "top": 16, "width": 290, "height": 40, "caption": "Traitement en cours...", "fontsize": 11 }
+  ]
+}

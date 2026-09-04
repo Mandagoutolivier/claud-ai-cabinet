@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab id="cabTab" label="Cabinet">
+        <group id="cabGrpCourrier" label="Courrier">
+          <button id="cabNouveau" label="Nouveau courrier" imageMso="FileNew" size="large" onAction="Ruban_Action" screentip="Nouveau courrier (Ctrl+Alt+N)" supertip="Choisir le patient et le correspondant : le courrier est créé avec l'en-tête, le destinataire et l'identité du patient."/>
+          <button id="cabPatient" label="Insérer le patient" imageMso="AddressBook" size="normal" onAction="Ruban_Action" screentip="Insérer l'identité du patient (Ctrl+Alt+P)"/>
+          <button id="cabCorriger" label="Corriger (IA)" imageMso="Spelling" size="large" onAction="Ruban_Action" screentip="Corriger le courrier dicté (Ctrl+Alt+C)" supertip="Anonymisation locale puis correction par l'IA, mise en gras automatique."/>
+          <button id="cabDerivee" label="Lettre dérivée" imageMso="MailMergeStartLetters" size="normal" onAction="Ruban_Action" screentip="Demande d'examen ou d'avis (Ctrl+Alt+D)"/>
+          <button id="cabValider" label="Valider" imageMso="ReviewAcceptChange" size="large" onAction="Ruban_Action" screentip="Valider et transmettre au secrétariat (Ctrl+Alt+V)"/>
+          <button id="cabEcg" label="Envoyer à l'ECG" imageMso="ChartInsert" size="normal" onAction="Ruban_Action" screentip="Envoyer l'identité du patient à Resting12Lead (Ctrl+Alt+G)"/>
+        </group>
+        <group id="cabGrpGras" label="Mise en gras">
+          <button id="cabGras" label="Mettre en gras" imageMso="Bold" size="large" onAction="Ruban_Action" screentip="Mettre en gras médicaments et expressions (Ctrl+Alt+B)" supertip="Médicaments en MAJUSCULES et en gras, expressions en gras, dans le corps du courrier."/>
+          <button id="cabMedicaments" label="Médicaments…" imageMso="TableExcelSpreadsheetInsert" size="normal" onAction="Ruban_Action" screentip="Ouvrir le dictionnaire des médicaments (Excel)" supertip="Une ligne par médicament : Terme, Variantes (séparées par |), Actif (1/0). Enregistrez et fermez Excel : pris en compte au prochain passage."/>
+          <button id="cabExpressions" label="Expressions…" imageMso="TableExcelSpreadsheetInsert" size="normal" onAction="Ruban_Action" screentip="Ouvrir le dictionnaire des expressions (Excel)" supertip="Une ligne par expression à mettre en gras : Terme, Actif (1/0)."/>
+        </group>
+        <group id="cabGrpAide" label="Aide">
+          <button id="cabAide" label="Aide" imageMso="Help" size="normal" onAction="Ruban_Action" screentip="Rappel des commandes"/>
+          <button id="cabDiagnostic" label="Diagnostic" imageMso="FileDocumentInspect" size="normal" onAction="Ruban_Action" screentip="Vérifier l'installation sur ce poste"/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

@@ -1,0 +1,70 @@
+{
+  "word": {
+    "output": "Cabinet.dotm",
+    "modules": [
+      "Commun/modConfig.bas",
+      "Commun/modFichiers.bas",
+      "Commun/modLog.bas",
+      "Commun/modJson.bas",
+      "Commun/modTexte.bas",
+      "Commun/modGdt.bas",
+      "Word/modBase.bas",
+      "Word/modPatient.bas",
+      "Word/modCourrier.bas",
+      "Word/modSubstitutions.bas",
+      "Word/modAnonymise.bas",
+      "Word/modClaude.bas",
+      "Word/modDerivees.bas",
+      "Word/modValidation.bas",
+      "Word/modEcg.bas",
+      "Word/modGras.bas",
+      "Word/modRuban.bas",
+      "Word/modRaccourcis.bas",
+      "Word/modTests_Word.bas"
+    ],
+    "forms": ["ufListe", "ufProgression"],
+    "ruban": "Word/customUI14.xml"
+  },
+  "excel": {
+    "output": "Cabinet.xlsm",
+    "modules": [
+      "Commun/modConfig.bas",
+      "Commun/modFichiers.bas",
+      "Commun/modLog.bas",
+      "Commun/modJson.bas",
+      "Commun/modTexte.bas",
+      "Commun/modGdt.bas",
+      "Excel/modBaseIO.bas",
+      "Excel/modAgenda.bas",
+      "Excel/modAgendaVue.bas",
+      "Excel/modEchange.bas",
+      "Excel/modActes.bas",
+      "Excel/modJournal.bas",
+      "Excel/modCerfaPrint.bas",
+      "Excel/modUI.bas",
+      "Excel/modTests_Excel.bas"
+    ],
+    "forms": ["ufListe", "ufPatientEdit", "ufCorrespEdit", "ufRdvEdit", "ufChoixActe"],
+    "thisworkbook": "Excel/ThisWorkbook.vba",
+    "feuilles": [
+      { "nom": "Agenda",
+        "boutons": [
+          { "texte": "< Semaine precedente", "macro": "AgendaSemainePrecedente" },
+          { "texte": "Aujourd'hui",          "macro": "AgendaAujourdhui" },
+          { "texte": "Semaine suivante >",   "macro": "AgendaSemaineSuivante" },
+          { "texte": "Retour Accueil",       "macro": "AgendaRetourAccueil" }
+        ] }
+    ],
+    "boutons": [
+      { "texte": "Agenda de la semaine", "macro": "UI_Agenda" },
+      { "texte": "Nouveau patient",      "macro": "UI_NouveauPatient" },
+      { "texte": "Modifier un patient",  "macro": "UI_ModifierPatient" },
+      { "texte": "Prise de rendez-vous", "macro": "UI_NouveauRdv" },
+      { "texte": "Arrivee d'un patient", "macro": "UI_ArriveePatient" },
+      { "texte": "Courriers a traiter",  "macro": "UI_CourriersATraiter" },
+      { "texte": "Correspondants",       "macro": "UI_Correspondants" },
+      { "texte": "Journal des actes",    "macro": "UI_OuvrirJournal" },
+      { "texte": "Calage imprimante CERFA", "macro": "UI_CalageCerfa" }
+    ]
+  }
+}
