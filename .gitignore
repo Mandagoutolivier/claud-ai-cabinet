@@ -1,0 +1,5 @@
+# Donnees de sante : jamais dans le depot
+Donnees/Base/Patients.xlsx
+Donnees/Base/Agenda_*.xlsx
+Donnees/Actes/Journal_*.xlsx
+Donnees/Import/
