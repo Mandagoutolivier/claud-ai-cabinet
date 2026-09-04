@@ -282,51 +282,87 @@ est marqué tutoiement. `{urgence}` : "programmée", "rapide", "en urgence".
   `SCINTI`, `SCANCORO`, `IRM`, `AVIS` par spécialité, `HOSP`), le ou les
   correspondants à proposer, le premier étant sélectionné par défaut.
 
-## 6. Mise en œuvre (réalisée le 04/09/2026)
+## 6. Mise en œuvre (04/09/2026, canevas R12 intégrés)
+
+### Déclenchement automatique à la validation
+
+À la validation du courrier principal (Ctrl+Alt+V, après correction), le
+logiciel repère les demandes d'examen ou d'avis et génère les lettres sans
+intervention. Un courrier qui est lui-même une demande n'en engendre pas.
+
+1. **Repérage** dans `Config\demandes\`, trois fichiers texte modifiables au
+   Bloc-notes par le médecin :
+   - `declencheurs.txt` : formules exprimant une demande, une par ligne,
+     `*` pour un texte variable (« je prescris* », « je l'adresse*pour* »).
+   - `examens.txt` : `expression|CODE_DU_PROFIL` (« test d'effort|TEST_EFFORT »).
+   - `exclusions.txt` : formules qui annulent (« avait réalisé* », « pourrait réaliser* »).
+   Une demande est reconnue quand un déclencheur et un examen sont dans la
+   même phrase sans exclusion. Comparaison sans casse ni accents, en mots
+   entiers, l'expression la plus longue l'emporte (« irm de stress » avant
+   « irm », « coroscanner » ne déclenche pas « scanner »).
+2. **Profil** `Config\profils\CODE.ini` (33 canevas issus de R12, UTF-8,
+   modifiables) : premier paragraphe imposé, rubriques dans l'ordre avec
+   leur statut (obligatoire, si présente, optionnelle, interdite), préfixes
+   de phrase, mots-clés de sélection, longueur (COURTE, MOYENNE, DETAILLEE),
+   objectif, modalités, `TYPE_BASE` (codes du classeur des spécialistes).
+   Profil absent : `AUTRE_EXAMEN.ini`.
+3. **Destinataire** : spécialiste de priorité 1 pour `TYPE_BASE` dans
+   `Specialistes_ParType` ; à défaut un bloc « DESTINATAIRE À COMPLÉTER ».
+4. **Rédaction** par l'API : courrier source anonymisé, identité du patient
+   balisée, phrases de prescription (qui portent l'examen précis, sa
+   modalité et le motif), consignes du profil. L'argumentaire se limite au
+   motif, à l'examen clinique, à l'ECG et au traitement, plus ou moins
+   développés selon la longueur du profil.
+5. **Validation** : `AutoValider=1` enregistre docx et PDF dans le dossier du
+   patient et transmet au secrétariat ; `AutoValider=0` laisse les lettres
+   ouvertes à relire. Le message de validation liste les lettres produites.
+
+### Commande manuelle Ctrl+Alt+D
+
+Choix du profil (liste filtrable), de la modalité si le profil en a, motif
+facultatif, destinataire pré-rempli par type et trié par priorité
+(« Nouveau... » = liste générale), puis génération.
+
+### Fichiers
 
 | Élément | Fichier |
 |---------|---------|
-| Catalogue des six demandes, modalités, consignes par type, destinataire pré-rempli | `Src/Word/modDerivees.bas` |
-| Gabarit du prompt (demande en tête, interdits du compte rendu, exemple attendu) | `Donnees/Config/prompts/derivee.txt` et `Src/ConfigDefaut/prompts/derivee.txt` |
-| Appel et formule par défaut selon tutoiement, bloc destinataire pré-composé | `Src/Word/modCourrier.bas` (`EstTutoye`, `AppelParDefaut`, `PolitesseParDefaut`) |
-| Prompt des dérivées chargé sans les courriers de référence | `Src/Word/modClaude.bas` (`ChargerPrompt`, paramètre `avecReferences`) |
-| Classeur des correspondants spécialistes lu pour pré-remplir le destinataire | `Donnees/Base/Correspondants_Specialistes.xlsx`, config `[DERIVEES] FichierSpecialistes` |
+| Repérage, profils, consignes API, génération automatique | `Src/Word/modDemandes.bas` |
+| Commande manuelle, destinataires, appel API, création du courrier | `Src/Word/modDerivees.bas` |
+| Validation réutilisable et appel des demandes automatiques | `Src/Word/modValidation.bas` (`ValiderDocument`) |
+| Appel et formule par défaut selon tutoiement, bloc destinataire en gras à l'interligne du corps | `Src/Word/modCourrier.bas` |
+| Prompt des dérivées sans courriers de référence | `Src/Word/modClaude.bas` (`ChargerPrompt`, `avecReferences`) |
+| Gabarit du prompt | `Donnees/Config/prompts/derivee.txt` |
+| Dictionnaires de repérage | `Donnees/Config/demandes/*.txt` |
+| Canevas | `Donnees/Config/profils/*.ini`, `CATALOGUE.txt` |
+| Classeur des spécialistes | `Donnees/Base/Correspondants_Specialistes.xlsx` |
+| Configuration | `config.ini` `[DERIVEES]` (Automatique, AutoValider, DossierProfils, DossierDemandes, Types, FichierSpecialistes) et `[COURRIER]` (formules par défaut) |
 | Test hors ligne | `Src/Word/modTests_Word.bas`, `Test_DERIVEES` |
 
-### Correspondance entre les demandes et les codes `TypeExamen` du classeur
+### Correspondance profils et codes du classeur des spécialistes
 
-| Demande | Modalités proposées | Codes `TypeExamen` lus dans `Specialistes_ParType` |
-|---------|--------------------|-----------------------------------------------------|
-| `TE` | aucune | `TEST_EFFORT` |
-| `SCINTI` | d'effort ; sous stress pharmacologique ; couplée ; de repos | `SCINTIGRAPHIE_MYOCARDIQUE` |
-| `SCANCORO` | avec score calcique ; score calcique seul ; sans score calcique | `COROSCANNER`, `SCORE_CALCIQUE` |
-| `IRM` | de repos ; stress dobutamine ; stress vasodilatateur | `IRM` |
-| `AVIS` | neurologique ; gastro-entérologique ; SAOS ; rythmologique ; diabétologique ; vasculaire ; autre | `AVIS_NEUROLOGIE`, `AVIS_GASTRO_ENTEROLOGIE`, `SAOS` + `AVIS_PNEUMOLOGIE`, `AVIS_RYTHMOLOGIE`, `AVIS_DIABETOLOGIE`, `AVIS_VASCULAIRE`, `AVIS_AUTRE` |
-| `HOSP` | programmée ; rapide (sous 48 h) ; en urgence | `HOSPITALISATION` |
-
-Quand aucun spécialiste actif n'existe pour un code, ou quand le médecin
-choisit « Nouveau... » dans la liste, la liste générale des correspondants
-est proposée. Le classeur ne contient pas encore de ligne `HOSPITALISATION`
-ni `AVIS_NEUROLOGIE` : ajouter dans `Specialistes_ParType` une ligne par
-service (CCN en priorité 1) pour que le destinataire soit pré-rempli.
+`TYPE_BASE` des profils a été aligné sur les codes `TypeExamen` du classeur :
+`AVIS_NEUROLOGIQUE.ini` → `AVIS_NEUROLOGIE`, `AVIS_GASTROENTEROLOGIQUE.ini` →
+`AVIS_GASTRO_ENTEROLOGIE`, `RECHERCHE_SAOS.ini` → `SAOS,AVIS_PNEUMOLOGIE`,
+`IRM_CARDIAQUE.ini` et `IRM_DE_STRESS.ini` → `IRM`, `HOSPITALISATION_CCN.ini` →
+`HOSPITALISATION_CCN`, `HOSPITALISATION_AUTRE_CENTRE.ini` → `HOSPITALISATION`.
+Le classeur ne contient pas encore de ligne `HOSPITALISATION_CCN`,
+`HOSPITALISATION` ni `AVIS_NEUROLOGIE` : les ajouter dans
+`Specialistes_ParType` (CCN en priorité 1) pour que le destinataire soit
+pré-rempli, sinon la lettre sort avec un bloc « à compléter ».
 
 ### Ordre des formules d'appel et de politesse
 
 1. Colonnes `FormuleAppel` / `FormulePolitesse` de la ligne `Specialistes_ParType`.
 2. À défaut, `FormuleAppel` de la fiche `Specialistes`.
-3. À défaut, les valeurs de `config.ini` `[COURRIER]` : `AppelProche` /
-   `PolitesseProche` si `TutoiementVouvoiement` vaut `tu`, sinon
-   `AppelDefaut` / `PolitesseDefaut`.
+3. À défaut, `config.ini` `[COURRIER]` : `AppelProche` / `PolitesseProche` si
+   `TutoiementVouvoiement` vaut `tu`, sinon `AppelDefaut` / `PolitesseDefaut`.
 
-Le tutoiement pilote aussi la rédaction du corps par l'API (« Je te serais
-reconnaissant » / « Je vous serais reconnaissant »).
+Le tutoiement pilote aussi la rédaction du corps par l'API.
 
-### Déroulement de la commande Ctrl+Alt+D
+### Mise en page de l'adresse du correspondant
 
-1. Choix du type de demande.
-2. Choix de la modalité, si le type en a.
-3. Motif ou question posée, facultatif, une phrase.
-4. Choix du destinataire, pré-rempli par type et trié par priorité.
-5. Anonymisation du courrier source et de l'identité du patient, appel de
-   l'API avec les consignes du type, vérification des balises, création du
-   courrier avec l'en-tête, l'appel et la formule du correspondant.
+Sur tous les courriers, le bloc adresse du correspondant est un seul
+paragraphe à sauts de ligne manuels, à l'interligne du corps
+(`[COURRIER] Interligne`), sans espacement entre les lignes, entièrement en
+gras (`modCourrier.MettreEnFormeDestinataire`).

@@ -14,6 +14,7 @@
       "Word/modSubstitutions.bas",
       "Word/modAnonymise.bas",
       "Word/modClaude.bas",
+      "Word/modDemandes.bas",
       "Word/modDerivees.bas",
       "Word/modValidation.bas",
       "Word/modEcg.bas",

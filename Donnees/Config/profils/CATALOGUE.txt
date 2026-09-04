@@ -1,0 +1,33 @@
+# code du profil|libellé (information)
+ANGIOSCANNER_AORTE_MEMBRES_INFERIEURS|angioscanner de l'aorte et des membres inférieurs
+ANGIOSCANNER_ARTERES_RENALES|angioscanner des artères rénales
+ANGIOSCANNER_PULMONAIRE|angioscanner pulmonaire
+ANGIOSCANNER_RENAL_SURRENALIEN|angioscanner rénal, des artères rénales et des surrénales
+ANGIOSCANNER_TSA|angioscanner des troncs supra-aortiques
+AUTRE_EXAMEN|examen complémentaire
+AVIS_GASTROENTEROLOGIQUE|avis gastro-entérologique
+AVIS_HEMATOLOGIQUE|avis hématologique
+AVIS_NEPHROLOGIQUE|avis néphrologique
+AVIS_NEUROLOGIQUE|avis neurologique
+AVIS_PNEUMOLOGIQUE|avis pneumologique
+AVIS_RYTHMOLOGIQUE|avis rythmologique
+AVIS_SPECIALISE|avis spécialisé
+AVIS_VASCULAIRE|avis vasculaire
+CORONAROGRAPHIE|coronarographie diagnostique
+COROSCANNER|coroscanner
+ECHODOPPLER_ARTERIEL_MEMBRES_INFERIEURS|écho-Doppler artériel des membres inférieurs
+ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS|écho-Doppler artériel des vaisseaux du cou et des membres inférieurs
+ECHODOPPLER_MEMBRES_INFERIEURS|écho-Doppler des membres inférieurs
+ECHODOPPLER_TSA|écho-Doppler des troncs supra-aortiques
+ECHODOPPLER_VEINEUX|écho-Doppler veineux des membres inférieurs
+HOSPITALISATION_AUTRE_CENTRE|hospitalisation dans un centre spécialisé
+HOSPITALISATION_CCN|hospitalisation au CCN
+IRM_CARDIAQUE|IRM cardiaque
+IRM_DE_STRESS|IRM cardiaque de stress
+RECHERCHE_SAOS|polygraphie ventilatoire nocturne
+SCANNER_RENAL|scanner rénal
+SCANNER_SURRENALIEN|scanner surrénalien
+SCANNER_THORACIQUE|scanner thoracique sans injection
+SCINTIGRAPHIE_MYOCARDIQUE|scintigraphie myocardique
+SCORE_CALCIQUE|score calcique coronaire
+TEST_EFFORT|test d'effort

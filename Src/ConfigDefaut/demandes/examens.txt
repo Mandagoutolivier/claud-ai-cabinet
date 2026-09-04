@@ -1,0 +1,85 @@
+# EXAMENS ET AVIS RECONNUS : expression|CODE_DU_PROFIL (Config\profils\CODE.ini)
+# Modifiable au Bloc-notes. Comparaison sans casse ni accents, en mots entiers ;
+# l'expression la plus longue l'emporte (irm de stress avant irm).
+# Pas de ligne pour echographie cardiaque, Holter, MAPA : faits au cabinet.
+test d'effort|TEST_EFFORT
+epreuve d'effort|TEST_EFFORT
+scintigraphie myocardique|SCINTIGRAPHIE_MYOCARDIQUE
+scintigraphie|SCINTIGRAPHIE_MYOCARDIQUE
+score calcique|SCORE_CALCIQUE
+coroscanner|COROSCANNER
+coro-scanner|COROSCANNER
+scanner coronaire|COROSCANNER
+angioscanner coronaire|COROSCANNER
+scanner thoracique sans injection|SCANNER_THORACIQUE
+scanner thoracique|SCANNER_THORACIQUE
+angioscanner pulmonaire|ANGIOSCANNER_PULMONAIRE
+angioscanner des arteres pulmonaires|ANGIOSCANNER_PULMONAIRE
+angioscanner tsa|ANGIOSCANNER_TSA
+angioscanner des troncs supra-aortiques|ANGIOSCANNER_TSA
+angioscanner des vaisseaux du cou|ANGIOSCANNER_TSA
+angioscanner de l'aorte et des membres inferieurs|ANGIOSCANNER_AORTE_MEMBRES_INFERIEURS
+angioscanner aorte membres inferieurs|ANGIOSCANNER_AORTE_MEMBRES_INFERIEURS
+angioscanner aorto-iliaque et membres inferieurs|ANGIOSCANNER_AORTE_MEMBRES_INFERIEURS
+angioscanner des arteres renales|ANGIOSCANNER_ARTERES_RENALES
+angioscanner arteres renales|ANGIOSCANNER_ARTERES_RENALES
+angioscanner renal et surrenalien|ANGIOSCANNER_RENAL_SURRENALIEN
+scanner renal|SCANNER_RENAL
+scanner des reins|SCANNER_RENAL
+scanner surrenalien|SCANNER_SURRENALIEN
+scanner des surrenales|SCANNER_SURRENALIEN
+angioscanner|AUTRE_EXAMEN
+scanner|AUTRE_EXAMEN
+irm cardiaque de stress|IRM_DE_STRESS
+irm de stress|IRM_DE_STRESS
+irm cardiaque|IRM_CARDIAQUE
+irm|IRM_CARDIAQUE
+coronarographie|CORONAROGRAPHIE
+echo-doppler veineux|ECHODOPPLER_VEINEUX
+echodoppler veineux|ECHODOPPLER_VEINEUX
+echo-doppler arteriel des vaisseaux du cou et des membres inferieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echodoppler arteriel des vaisseaux du cou et des membres inferieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echo-doppler arteriel tsa et membres inferieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+bilan vasculaire|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echo-doppler arteriel des membres inferieurs|ECHODOPPLER_ARTERIEL_MEMBRES_INFERIEURS
+echodoppler arteriel des membres inferieurs|ECHODOPPLER_ARTERIEL_MEMBRES_INFERIEURS
+echo-doppler arteriel|ECHODOPPLER_ARTERIEL_MEMBRES_INFERIEURS
+echodoppler arteriel|ECHODOPPLER_ARTERIEL_MEMBRES_INFERIEURS
+echo-doppler des troncs supra-aortiques|ECHODOPPLER_TSA
+echodoppler des troncs supra-aortiques|ECHODOPPLER_TSA
+troncs supra-aortiques|ECHODOPPLER_TSA
+doppler des vaisseaux du cou|ECHODOPPLER_TSA
+echo-doppler des membres inferieurs|ECHODOPPLER_MEMBRES_INFERIEURS
+echodoppler des membres inferieurs|ECHODOPPLER_MEMBRES_INFERIEURS
+avis neurologique|AVIS_NEUROLOGIQUE
+neurologue|AVIS_NEUROLOGIQUE
+avis gastro-enterologique|AVIS_GASTROENTEROLOGIQUE
+avis gastroenterologique|AVIS_GASTROENTEROLOGIQUE
+gastro-enterologue|AVIS_GASTROENTEROLOGIQUE
+gastroenterologue|AVIS_GASTROENTEROLOGIQUE
+avis pneumologique|AVIS_PNEUMOLOGIQUE
+pneumologue|AVIS_PNEUMOLOGIQUE
+avis rythmologique|AVIS_RYTHMOLOGIQUE
+rythmologue|AVIS_RYTHMOLOGIQUE
+avis nephrologique|AVIS_NEPHROLOGIQUE
+nephrologue|AVIS_NEPHROLOGIQUE
+avis hematologique|AVIS_HEMATOLOGIQUE
+hematologue|AVIS_HEMATOLOGIQUE
+avis vasculaire|AVIS_VASCULAIRE
+chirurgien vasculaire|AVIS_VASCULAIRE
+avis specialise|AVIS_SPECIALISE
+polygraphie ventilatoire nocturne|RECHERCHE_SAOS
+polygraphie nocturne|RECHERCHE_SAOS
+polygraphie|RECHERCHE_SAOS
+recherche de syndrome d'apnees du sommeil|RECHERCHE_SAOS
+recherche de saos|RECHERCHE_SAOS
+apnees du sommeil|RECHERCHE_SAOS
+hospitalisation au ccn|HOSPITALISATION_CCN
+hospitalisation ccn|HOSPITALISATION_CCN
+admission au ccn|HOSPITALISATION_CCN
+hospitalisation dans un autre centre|HOSPITALISATION_AUTRE_CENTRE
+hospitalisation dans votre centre|HOSPITALISATION_AUTRE_CENTRE
+hospitalisation|HOSPITALISATION_AUTRE_CENTRE
+hospitaliser|HOSPITALISATION_AUTRE_CENTRE
+hospitalise|HOSPITALISATION_AUTRE_CENTRE
+admission hospitaliere|HOSPITALISATION_AUTRE_CENTRE

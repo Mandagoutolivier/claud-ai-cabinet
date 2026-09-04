@@ -103,7 +103,10 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
     If Len(politesse) = 0 Then politesse = PolitesseParDefaut(EstTutoye(cor))
 
     RemplirSignet doc, "EXPEDITEUR", expediteur
-    RemplirSignet doc, "DESTINATAIRE", destinataire
+    ' l'adresse est UN paragraphe (sauts de ligne manuels) : meme interligne
+    ' que le corps, sans espacement entre les lignes, entierement en gras
+    RemplirSignet doc, "DESTINATAIRE", Replace(destinataire, vbCr, Chr$(11))
+    MettreEnFormeDestinataire doc
     RemplirSignet doc, "DATELIEU", modConfig.Config("GENERAL", "Ville") & ", le " & Format$(Date, "d mmmm yyyy")
     RemplirSignet doc, "CONCERNE", concerne
     RemplirSignet doc, "APPEL", appel
@@ -214,6 +217,27 @@ Public Sub PreparerStyleCorps(ByVal doc As Document)
     AppliquerEspacement doc, "CORPS"
     AppliquerEspacement doc, "POLITESSE"
     If Err.Number <> 0 Then modLog.LogErreur "PreparerStyleCorps : " & Err.Description
+End Sub
+
+' Bloc adresse du correspondant : interligne du corps ([COURRIER] Interligne),
+' aucun espacement avant/apres entre les lignes du bloc, tout en gras.
+Public Sub MettreEnFormeDestinataire(ByVal doc As Document)
+    On Error Resume Next
+    Dim rng As Range, p As Paragraph
+    If Not doc.Bookmarks.Exists("DESTINATAIRE") Then Exit Sub
+    Set rng = doc.Bookmarks("DESTINATAIRE").Range
+    rng.Font.Bold = True
+    For Each p In rng.Paragraphs
+        With p.Format
+            .SpaceBeforeAuto = False
+            .SpaceAfterAuto = False
+            .SpaceBefore = 0
+            .SpaceAfter = 0
+            .LineSpacingRule = wdLineSpaceMultiple
+            .LineSpacing = LinesToPoints(modConfig.ConfigNum("COURRIER", "Interligne", 1.15))
+        End With
+    Next p
+    If Err.Number <> 0 Then modLog.LogErreur "MettreEnFormeDestinataire : " & Err.Description
 End Sub
 
 ' Espacement d'usage des courriers (config [COURRIER] : EspaceAvantPt,

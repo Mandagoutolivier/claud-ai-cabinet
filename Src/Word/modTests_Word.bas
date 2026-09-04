@@ -505,34 +505,53 @@ Echec:
     modLog.TestResultat "exception " & Err.Number, False, Err.Description
 End Sub
 
-' Lettres derivees (hors ligne, sans appel API) : catalogue, prompt,
-' registre et destinataires pre-remplis depuis le classeur des specialistes
+' Lettres derivees (hors ligne, sans appel API) : detection des demandes,
+' profils, prompt, registre et destinataires pre-remplis
 Public Sub Test_DERIVEES(Optional ByVal racine As String = "")
     If Len(racine) > 0 Then modConfig.DefinirRacine racine
-    modLog.TestDebut "DERIVEES lettres de demande (hors ligne)"
+    modLog.TestDebut "DERIVEES demandes d'examen (hors ligne)"
     On Error GoTo Echec
-    Dim prompt As String, cor As Object, liste As Collection, d As Object
+    Dim prompt As String, cor As Object, liste As Collection, d As Object, p As Object, dem As Collection
 
-    ' --- catalogue et modalites ---
-    modLog.Verifier "type TE connu", Not modDerivees.DefinitionDemande("TE") Is Nothing
-    modLog.Verifier "type inconnu = Nothing", modDerivees.DefinitionDemande("ECHO") Is Nothing
-    modLog.Verifier "avis SAOS -> codes pneumo", InStr(modDerivees.TypesExamenPour("AVIS", "SAOS (apnées du sommeil)"), "SAOS") > 0
-    modLog.Verifier "scanner -> coroscanner + score", InStr(modDerivees.TypesExamenPour("SCANCORO", "avec score calcique"), "SCORE_CALCIQUE") > 0
-    modLog.Verifier "libelle avec modalite", modDerivees.LibelleDemande("IRM", "de repos") = "IRM cardiaque de repos"
+    ' --- detection : declencheur + examen dans la meme phrase, sans exclusion ---
+    Set dem = modDemandes.DetecterDemandes("Il est asymptomatique. Je prescris un test d'effort pour compléter ce bilan. " & _
+        "Il avait réalisé une scintigraphie en 2019. Je l'adresse au Docteur X pour un avis pneumologique.")
+    modLog.Verifier "2 demandes reperees", dem.Count = 2, CStr(dem.Count)
+    If dem.Count >= 1 Then modLog.Verifier "test d'effort -> TEST_EFFORT", dem(1)("Code") = "TEST_EFFORT", dem(1)("Code")
+    If dem.Count >= 2 Then modLog.Verifier "avis pneumologique -> profil", dem(2)("Code") = "AVIS_PNEUMOLOGIQUE", dem(2)("Code")
+    If dem.Count >= 1 Then modLog.Verifier "phrase de prescription conservee", InStr(dem(1)("Phrase"), "Je prescris") > 0
+    Set dem = modDemandes.DetecterDemandes("Nous poursuivons les investigations en réalisant une IRM de stress et un coroscanner.")
+    modLog.Verifier "irm de stress prime sur irm", dem.Count = 2 And dem(1)("Code") = "IRM_DE_STRESS", CStr(dem.Count)
+    modLog.Verifier "coroscanner et non scanner", dem.Count = 2 And dem(2)("Code") = "COROSCANNER"
+    Set dem = modDemandes.DetecterDemandes("Le scanner thoracique de 2020 était normal. Un test d'effort pourrait être réalisé.")
+    modLog.Verifier "sans declencheur ni avec exclusion : rien", dem.Count = 0, CStr(dem.Count)
+    modLog.Verifier "motif avec *", modDemandes.MotifCorrespond("je complete le bilan cardiologique par une irm", "je complete le bilan*par*")
+
+    ' --- profils ---
+    Set p = modDemandes.ChargerProfil("TEST_EFFORT")
+    modLog.Verifier "profil TEST_EFFORT charge", modDemandes.ValeurProfil(p, "IDENTITE", "LIBELLE") = "test d'effort"
+    modLog.Verifier "profil : ordre des rubriques", InStr(modDemandes.ValeurProfil(p, "STRUCTURE", "ORDRE"), "ECG") > 0
+    Set p = modDemandes.ChargerProfil("SCINTIGRAPHIE_MYOCARDIQUE")
+    modLog.Verifier "profil scinti : 4 modalites", modDemandes.ModalitesProfil(p).Count = 4
+    modLog.Verifier "texte de modalite", InStr(modDemandes.TexteExamen(p, "de repos"), "de repos") > 0
+    Set p = modDemandes.ChargerProfil("CODE_INCONNU_XYZ")
+    modLog.Verifier "profil inconnu -> AUTRE_EXAMEN", modDemandes.ValeurProfil(p, "IDENTITE", "CODE") = "AUTRE_EXAMEN"
+    modLog.Verifier "liste des profils", modDemandes.ListerProfils().Count >= 30
 
     ' --- prompt : demande en tete, registre, pas de resume ---
-    prompt = modDerivees.ConstruirePrompt("TE", "", True, "Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans", "")
-    modLog.Verifier "prompt : premiere phrase = demande", InStr(prompt, "Merci de réaliser une épreuve d'effort à Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans") > 0
-    modLog.Verifier "prompt : tutoiement", InStr(prompt, "Je te serais reconnaissant") > 0 And InStr(prompt, "tutoiement") > 0
+    Set p = modDemandes.ChargerProfil("TEST_EFFORT")
+    prompt = modDerivees.ConstruirePrompt(p, "", True, "Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans", "", "Je prescris un test d'effort.")
+    modLog.Verifier "prompt : premiere phrase = demande", InStr(prompt, "Merci de réaliser un test d'effort à Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans") > 0
+    modLog.Verifier "prompt : tutoiement", InStr(prompt, "Je te serais reconnaissant") > 0
+    modLog.Verifier "prompt : rubrique ECG avec prefixe", InStr(prompt, "Électrocardiogramme") > 0 And InStr(prompt, "L'électrocardiogramme montre") > 0
+    modLog.Verifier "prompt : phrase de prescription", InStr(prompt, "Je prescris un test d'effort.") > 0
     modLog.Verifier "prompt : interdit 'Je revois'", InStr(prompt, "Je revois") > 0 And InStr(prompt, "Au total") > 0
     modLog.Verifier "prompt : sans courriers de reference", InStr(prompt, "Courrier de référence") = 0 And InStr(prompt, "[COURRIERS_DE_REFERENCE]") = 0
-    modLog.Verifier "prompt : sans marqueur restant", InStr(prompt, "{{CONSIGNES_TYPE}}") = 0 And InStr(prompt, "{{MOTIF}}") = 0
-    prompt = modDerivees.ConstruirePrompt("SCINTI", "sous stress pharmacologique", False, "Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans", "Bloc de branche gauche complet.")
-    modLog.Verifier "prompt scinti : modalite", InStr(prompt, "sous stress pharmacologique") > 0
-    modLog.Verifier "prompt scinti : vouvoiement", InStr(prompt, "Je vous serais reconnaissant") > 0
-    modLog.Verifier "prompt scinti : motif repris", InStr(prompt, "Bloc de branche gauche complet.") > 0
-    prompt = modDerivees.ConstruirePrompt("HOSP", "en urgence", False, "Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans", "")
-    modLog.Verifier "prompt hosp : votre service", InStr(prompt, "dans votre service") > 0
+    modLog.Verifier "prompt : sans marqueur restant", InStr(prompt, "{{CONSIGNES_TYPE}}") = 0 And InStr(prompt, "{{MOTIF}}") = 0 And InStr(prompt, "{ARTICLE_EXAMEN}") = 0
+    Set p = modDemandes.ChargerProfil("HOSPITALISATION_CCN")
+    prompt = modDerivees.ConstruirePrompt(p, "en urgence", False, "Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans", "", "")
+    modLog.Verifier "prompt hosp : vouvoiement", InStr(prompt, "Je vous remercie de bien vouloir prendre en charge") > 0
+    modLog.Verifier "prompt hosp : modalite", InStr(prompt, "en urgence au CCN") > 0
 
     ' --- registre et formules par defaut ---
     Set cor = CreateObject("Scripting.Dictionary"): cor.CompareMode = 1
@@ -556,8 +575,9 @@ Public Sub Test_DERIVEES(Optional ByVal racine As String = "")
         modLog.Verifier "formules renseignees", Len(d("FormuleAppel")) > 0 And Len(d("FormulePolitesse")) > 0
         modLog.Verifier "champs modCourrier presents", d.Exists("CP") And d.Exists("Ville") And d.Exists("Specialite")
     End If
-    Set liste = modDerivees.CorrespondantsPourTypes("HOSPITALISATION")
-    modLog.Verifier "hospitalisation : liste vide -> repli liste generale", liste.Count = 0 Or liste.Count > 0
+    Set p = modDemandes.ChargerProfil("TEST_EFFORT")
+    Set d = modDerivees.DestinataireAutomatique(p)
+    modLog.Verifier "destinataire automatique", Not d Is Nothing And Len(d("BlocDestinataire")) > 0, d("NomDestinataire")
     Exit Sub
 Echec:
     modLog.TestResultat "exception " & Err.Number, False, Err.Description

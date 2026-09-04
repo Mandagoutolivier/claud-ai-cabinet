@@ -1,27 +1,32 @@
 Attribute VB_Name = "modDerivees"
 Option Explicit
 ' =====================================================================
-' modDerivees - Lettres derivees du courrier dicte : DEMANDE d'examen
-' (épreuve d'effort, scintigraphie, scanner coronaire, IRM cardiaque),
+' modDerivees - Lettres derivees du courrier dicte : DEMANDE d'examen,
 ' d'avis specialise ou d'hospitalisation, adressee a un confrere.
 '
 ' Une lettre derivee n'est PAS un resume du compte rendu : c'est une
-' demande courte (voir LETTRES_DERIVEES.md). Le corps est redige par
-' l'API a partir du corps ANONYMISE du courrier source, avec des
-' consignes propres a chaque type de demande et a chaque modalité.
-' L'en-tete, l'appel et la formule finale viennent du modele et de la
-' fiche correspondant (modCourrier) : l'API ne redige QUE le corps.
+' demande courte dont le canevas est un PROFIL (Config\profils\CODE.ini,
+' voir modDemandes et LETTRES_DERIVEES.md). Le corps est redige par l'API
+' a partir du corps ANONYMISE du courrier source et des consignes du
+' profil ; l'en-tete, l'appel et la formule finale viennent du modele et
+' de la fiche correspondant (modCourrier) : l'API ne redige QUE le corps.
+'
+' Deux points d'entree :
+'  - LettreDerivee (Ctrl+Alt+D) : choix manuel du profil, de la modalite,
+'    du motif et du destinataire ;
+'  - modDemandes.GenererDemandesAutomatiques : a la validation du courrier
+'    principal, une lettre par demande reperee, destinataire de priorite 1.
 '
 ' Le destinataire est pre-rempli depuis le classeur des correspondants
 ' specialistes ([DERIVEES] FichierSpecialistes, feuilles Specialistes +
-' Specialistes_ParType), filtre sur le type d'examen et trie par
+' Specialistes_ParType), filtre sur TYPE_BASE du profil et trie par
 ' priorite ; a defaut, la liste generale des correspondants.
 ' =====================================================================
 
 ' Commande principale (Ctrl+Alt+D / commande vocale)
 Public Sub LettreDerivee()
     On Error GoTo Erreur
-    Dim doc As Document, pat As Object, dest As Object
+    Dim doc As Document, pat As Object, dest As Object, p As Object
     Dim code As String, modalite As String, motif As String
 
     Set doc = ActiveDocument
@@ -32,19 +37,20 @@ Public Sub LettreDerivee()
         Exit Sub
     End If
 
-    code = ChoisirTypeDemande()
+    code = ChoisirProfil()
     If Len(code) = 0 Then Exit Sub
+    Set p = modDemandes.ChargerProfil(code)
 
-    modalite = ChoisirModalite(code)
+    modalite = ChoisirModalite(p)
     If modalite = vbNullChar Then Exit Sub          ' annulation
 
-    motif = Trim$(InputBox("Motif ou question posée (facultatif, une phrase) :", _
-                           "Demande : " & LibelleDemande(code, modalite)))
+    motif = Trim$(InputBox("Motif ou question posee (facultatif, une phrase) :", _
+                           "Demande : " & modDemandes.LibelleProfil(p, modalite)))
 
-    Set dest = ChoisirDestinataire(code, modalite)
+    Set dest = ChoisirDestinataire(p, modalite)
     If dest Is Nothing Then Exit Sub
 
-    GenererDerivee doc, code, dest, modalite, motif
+    GenererDepuisProfil doc, p, dest, modalite, motif, ""
     Exit Sub
 Erreur:
     Dim descErr As String
@@ -53,173 +59,41 @@ Erreur:
     MsgBox "Erreur : " & descErr, vbCritical, "Cabinet"
 End Sub
 
-' ---------------------------------------------------------------------
-' Catalogue des demandes (codes stables, utilises par config.ini
-' [DERIVEES] Types=TE;SCINTI;SCANCORO;IRM;AVIS;HOSP)
-' ---------------------------------------------------------------------
-Private Function Catalogue() As Collection
-    Dim c As Collection
-    Set c = New Collection
-    c.Add Definir("TE", "Épreuve d'effort", "TEST_EFFORT", "", _
-        "Examen demandé : une épreuve d'effort. Première phrase : ""Merci de réaliser une épreuve d'effort à <patient>."" " & _
-        "Dernière phrase : ""Je <te/vous> serais reconnaissant de bien vouloir réaliser cet examen afin de compléter ce bilan."""), "TE"
-    c.Add Definir("SCINTI", "Scintigraphie myocardique", "SCINTIGRAPHIE_MYOCARDIQUE", _
-        "d'effort=une scintigraphie myocardique de perfusion d'effort|" & _
-        "sous stress pharmacologique=une scintigraphie myocardique de perfusion sous stress pharmacologique (dipyridamole ou régadénoson)|" & _
-        "couplée effort + pharmacologique=une scintigraphie myocardique de perfusion sous effort couplé à un stress pharmacologique|" & _
-        "de repos=une scintigraphie myocardique de perfusion de repos", _
-        "Examen demandé : <modalite>. Première phrase : ""Merci de réaliser <modalite> à <patient>."" " & _
-        "Si le courrier source mentionne une contre-indication à l'effort, un bloc de branche gauche ou un stimulateur, le rappeler en une ligne car cela justifie la modalité. " & _
-        "Dernière phrase : ""Je <te/vous> serais reconnaissant de bien vouloir réaliser cet examen et de m'adresser le compte rendu."""), "SCINTI"
-    c.Add Definir("SCANCORO", "Scanner coronaire", "COROSCANNER,SCORE_CALCIQUE", _
-        "avec score calcique=un scanner coronaire avec score calcique|" & _
-        "score calcique seul=un score calcique coronaire|" & _
-        "sans score calcique=un scanner coronaire", _
-        "Examen demandé : <modalite>. Première phrase : ""Merci de réaliser <modalite> à <patient>."" " & _
-        "Si la fonction rénale (créatinine, clairance) figure dans le courrier source, la donner en une ligne ; sinon ne rien inventer. " & _
-        "Dernière phrase : ""Je <te/vous> serais reconnaissant de bien vouloir réaliser cet examen."""), "SCANCORO"
-    c.Add Definir("IRM", "IRM cardiaque", "IRM", _
-        "de repos=une IRM cardiaque de repos|" & _
-        "de stress sous dobutamine=une IRM cardiaque de stress sous dobutamine|" & _
-        "de stress sous vasodilatateur=une IRM cardiaque de stress sous vasodilatateur (adénosine ou régadénoson)", _
-        "Examen demandé : <modalite>. Première phrase : ""Merci de réaliser <modalite> à <patient>."" " & _
-        "Reprendre en une ligne le résultat échographique utile s'il figure dans le courrier source (FEVG, cinétique, valvulopathie). " & _
-        "Formuler la question posée en une phrase (viabilité, ischémie, cardiomyopathie...) d'après le motif ou le courrier source. " & _
-        "Dernière phrase : ""Je <te/vous> serais reconnaissant de bien vouloir réaliser cet examen."""), "IRM"
-    c.Add Definir("AVIS", "Avis spécialisé", "AVIS_NEUROLOGIE,AVIS_GASTRO_ENTEROLOGIE,SAOS,AVIS_PNEUMOLOGIE,AVIS_RYTHMOLOGIE,AVIS_DIABETOLOGIE,AVIS_VASCULAIRE,AVIS_AUTRE", _
-        "neurologique=un avis neurologique;AVIS_NEUROLOGIE|" & _
-        "gastro-entérologique=un avis gastro-entérologique;AVIS_GASTRO_ENTEROLOGIE|" & _
-        "SAOS (apnées du sommeil)=un avis pneumologique à la recherche d'un syndrome d'apnées du sommeil;SAOS,AVIS_PNEUMOLOGIE|" & _
-        "rythmologique=un avis rythmologique;AVIS_RYTHMOLOGIE|" & _
-        "diabétologique=un avis diabétologique;AVIS_DIABETOLOGIE|" & _
-        "vasculaire=un avis vasculaire;AVIS_VASCULAIRE|" & _
-        "autre spécialité=un avis spécialisé;AVIS_AUTRE", _
-        "Avis demandé : <modalite>. Première phrase : ""Je <te/vous> confie <patient> pour <modalite>."" " & _
-        "Puis le motif de l'avis (une ou deux lignes), les symptômes et le traitement en cours s'ils figurent dans le courrier source, et la question posée en une phrase. " & _
-        "Dernière phrase : ""Je <te/vous> serais reconnaissant de bien vouloir <recevoir ce patient / cette patiente>."""), "AVIS"
-    c.Add Definir("HOSP", "Demande d'hospitalisation", "HOSPITALISATION", _
-        "programmée=une hospitalisation programmée|" & _
-        "rapide (sous 48 h)=une hospitalisation rapide, sous 48 heures|" & _
-        "en urgence=une hospitalisation en urgence", _
-        "Demande : <modalite>. Première phrase : ""Je <te/vous> adresse <patient> pour <modalite> dans <ton/votre> service."" " & _
-        "Puis le motif d'hospitalisation, les symptômes, l'ECG, l'échographie, le traitement en cours et les antécédents cardiologiques majeurs, uniquement s'ils figurent dans le courrier source, chacun en une ligne. " & _
-        "Terminer par la question posée ou l'objectif de l'hospitalisation, puis : ""Je <te/vous> remercie de bien vouloir <prendre en charge ce patient / cette patiente>."""), "HOSP"
-    Set Catalogue = c
-End Function
-
-Private Function Definir(ByVal code As String, ByVal libelle As String, ByVal typesExamen As String, _
-                     ByVal modalites As String, ByVal consigne As String) As Object
-    Dim d As Object
-    Set d = CreateObject("Scripting.Dictionary")
-    d.CompareMode = 1
-    d("ID") = code
-    d("Code") = code
-    d("Libelle") = libelle
-    d("TypesExamen") = typesExamen
-    d("Modalites") = modalites
-    d("ConsigneType") = consigne
-    Set Definir = d
-End Function
-
-Public Function DefinitionDemande(ByVal code As String) As Object
-    Dim c As Collection
-    Set c = Catalogue()
-    On Error Resume Next
-    Set DefinitionDemande = c(code)
-    On Error GoTo 0
-End Function
-
-' Types actives : config.ini [DERIVEES] Types=TE;SCINTI;... (codes du catalogue)
-Private Function ChoisirTypeDemande() As String
-    Dim codes() As String, i As Long, items As Collection, d As Object, f As ufListe
-    codes = Split(modConfig.Config("DERIVEES", "Types", "TE;SCINTI;SCANCORO;IRM;AVIS;HOSP"), ";")
-    Set items = New Collection
-    For i = LBound(codes) To UBound(codes)
-        Set d = DefinitionDemande(UCase$(Trim$(codes(i))))
-        If Not d Is Nothing Then items.Add d
-    Next i
+' Profils proposes : tous ceux de Config\profils, ou la liste
+' config.ini [DERIVEES] Types=CODE;CODE;... si elle est renseignee
+Private Function ChoisirProfil() As String
+    Dim items As Collection, f As ufListe
+    Set items = modDemandes.ListerProfils(modConfig.Config("DERIVEES", "Types", ""))
     If items.Count = 0 Then
         Err.Raise vbObjectError + 502, "modDerivees", _
-            "Aucun type de demande valide dans config.ini [DERIVEES] Types (codes : TE;SCINTI;SCANCORO;IRM;AVIS;HOSP)."
+            "Aucun profil de demande dans " & modDemandes.DossierProfils()
     End If
     Set f = New ufListe
-    f.Configurer "Type de demande", items, Array("Libelle"), "280 pt"
+    f.Configurer "Type de demande (tapez pour filtrer)", items, Array("Libelle", "Code"), "220 pt;150 pt"
     f.Show vbModal
-    If Not f.Annule Then ChoisirTypeDemande = f.Resultat("Code")
+    If Not f.Annule Then ChoisirProfil = f.Resultat("Code")
     Unload f
 End Function
 
-' Modalite de la demande (libelle affiche). "" si le type n'en a pas,
-' vbNullChar si le medecin annule.
-Private Function ChoisirModalite(ByVal code As String) As String
-    Dim d As Object, mods() As String, i As Long, items As Collection, it As Object, f As ufListe
-    Set d = DefinitionDemande(code)
-    If Len(d("Modalites")) = 0 Then ChoisirModalite = "": Exit Function
-    mods = Split(d("Modalites"), "|")
-    Set items = New Collection
-    For i = LBound(mods) To UBound(mods)
-        Set it = CreateObject("Scripting.Dictionary")
-        it.CompareMode = 1
-        it("ID") = CStr(i)
-        it("Libelle") = Left$(mods(i), InStr(mods(i), "=") - 1)
-        items.Add it
-    Next i
+' Modalite du profil (libelle). "" si le profil n'en a pas, vbNullChar si annulation.
+Private Function ChoisirModalite(ByVal p As Object) As String
+    Dim items As Collection, f As ufListe
+    Set items = modDemandes.ModalitesProfil(p)
+    If items.Count = 0 Then ChoisirModalite = "": Exit Function
     Set f = New ufListe
-    f.Configurer d("Libelle") & " : modalite", items, Array("Libelle"), "280 pt"
+    f.Configurer modDemandes.LibelleProfil(p) & " : modalite", items, Array("Libelle"), "280 pt"
     f.Show vbModal
     If f.Annule Then ChoisirModalite = vbNullChar Else ChoisirModalite = f.Resultat("Libelle")
     Unload f
 End Function
 
-' Texte de la modalité pour l'API ("une scintigraphie ... d'effort") et,
-' pour les avis, les codes TypeExamen apres le ";".
-Private Function DetailModalite(ByVal code As String, ByVal modalite As String) As String
-    Dim d As Object, mods() As String, i As Long, p As Long
-    Set d = DefinitionDemande(code)
-    If Len(modalite) = 0 Or Len(d("Modalites")) = 0 Then Exit Function
-    mods = Split(d("Modalites"), "|")
-    For i = LBound(mods) To UBound(mods)
-        p = InStr(mods(i), "=")
-        If StrComp(Left$(mods(i), p - 1), modalite, vbTextCompare) = 0 Then
-            DetailModalite = Mid$(mods(i), p + 1)
-            Exit Function
-        End If
-    Next i
-End Function
-
-Private Function TexteModalite(ByVal code As String, ByVal modalite As String) As String
-    Dim det As String
-    det = DetailModalite(code, modalite)
-    If InStr(det, ";") > 0 Then det = Left$(det, InStr(det, ";") - 1)
-    TexteModalite = det
-End Function
-
-' Codes TypeExamen a proposer pour le destinataire (les avis dependent de la specialite)
-Public Function TypesExamenPour(ByVal code As String, ByVal modalite As String) As String
-    Dim d As Object, det As String
-    Set d = DefinitionDemande(code)
-    det = DetailModalite(code, modalite)
-    If InStr(det, ";") > 0 Then
-        TypesExamenPour = Mid$(det, InStr(det, ";") + 1)
-    Else
-        TypesExamenPour = d("TypesExamen")
-    End If
-End Function
-
-Public Function LibelleDemande(ByVal code As String, ByVal modalite As String) As String
-    Dim d As Object
-    Set d = DefinitionDemande(code)
-    LibelleDemande = d("Libelle")
-    If Len(modalite) > 0 Then LibelleDemande = LibelleDemande & " " & modalite
-End Function
-
 ' ---------------------------------------------------------------------
-' Destinataire pre-rempli depuis le classeur des specialistes
+' Destinataire
 ' ---------------------------------------------------------------------
-Private Function ChoisirDestinataire(ByVal code As String, ByVal modalite As String) As Object
+Private Function ChoisirDestinataire(ByVal p As Object, ByVal modalite As String) As Object
     Dim items As Collection, f As ufListe, titre As String
-    titre = "Destinataire : " & LibelleDemande(code, modalite)
-    Set items = CorrespondantsPourTypes(TypesExamenPour(code, modalite))
+    titre = "Destinataire : " & modDemandes.LibelleProfil(p, modalite)
+    Set items = CorrespondantsPourTypes(modDemandes.ValeurProfil(p, "IDENTITE", "TYPE_BASE"))
     If items.Count > 0 Then
         Set f = New ufListe
         f.Configurer titre & "  (Nouveau... = autre correspondant)", items, _
@@ -237,6 +111,33 @@ Private Function ChoisirDestinataire(ByVal code As String, ByVal modalite As Str
     Set ChoisirDestinataire = modPatient.ChoisirCorrespondant("", titre)
 End Function
 
+' Destinataire sans intervention (generation automatique) : specialiste de
+' priorite 1 pour TYPE_BASE ; a defaut une fiche "a completer" pour que la
+' lettre existe quand meme et que le secretariat complete l'adresse.
+Public Function DestinataireAutomatique(ByVal p As Object) As Object
+    Dim items As Collection, d As Object
+    Set items = CorrespondantsPourTypes(modDemandes.ValeurProfil(p, "IDENTITE", "TYPE_BASE"))
+    If items.Count > 0 Then
+        Set DestinataireAutomatique = items(1)
+        Exit Function
+    End If
+    modLog.LogInfo "Aucun specialiste pour " & modDemandes.ValeurProfil(p, "IDENTITE", "TYPE_BASE") & " : destinataire a completer"
+    Set d = CreateObject("Scripting.Dictionary")
+    d.CompareMode = 1
+    d("ID") = "A_COMPLETER"
+    d("NomDestinataire") = "Destinataire à compléter"
+    d("Titre") = "": d("Prenom") = "": d("Nom") = ""
+    d("Specialite") = "": d("Adresse1") = "": d("Adresse2") = "": d("CP") = "": d("Ville") = ""
+    d("Tel") = "": d("Email") = "": d("Structure") = ""
+    d("BlocDestinataire") = "DESTINATAIRE À COMPLÉTER" & vbCr & "(" & modDemandes.LibelleProfil(p) & ")"
+    d("Tutoiement") = "vous"
+    d("FormuleAppel") = modCourrier.AppelParDefaut(False)
+    d("FormulePolitesse") = modCourrier.PolitesseParDefaut(False)
+    d("Priorite") = 999
+    d("Actif") = "1"
+    Set DestinataireAutomatique = d
+End Function
+
 ' Specialistes actifs pour un ou plusieurs codes TypeExamen (virgules),
 ' tries par priorite croissante, sous la forme attendue par modCourrier
 ' (Titre, Prenom, Nom, Specialite, Adresse1/2, CP, Ville, FormuleAppel,
@@ -247,7 +148,7 @@ Public Function CorrespondantsPourTypes(ByVal typesExamen As String) As Collecti
     Dim parId As Object, vus As Object, cle As String
     Set res = New Collection
     fichier = FichierSpecialistes()
-    If Len(fichier) = 0 Then Set CorrespondantsPourTypes = res: Exit Function
+    If Len(fichier) = 0 Or Len(Trim$(typesExamen)) = 0 Then Set CorrespondantsPourTypes = res: Exit Function
 
     Set specialistes = modBase.LireTable(fichier, modConfig.Config("DERIVEES", "FeuilleSpecialistes", "Specialistes"), "ID")
     Set parType = modBase.LireTable(fichier, modConfig.Config("DERIVEES", "FeuilleParType", "Specialistes_ParType"), "ID_Ligne")
@@ -360,51 +261,40 @@ Private Sub InsererParPriorite(ByVal col As Collection, ByVal d As Object)
 End Sub
 
 ' ---------------------------------------------------------------------
-' Prompt systeme de la demande : gabarit derivee.txt + consignes du type
+' Prompt systeme de la demande : gabarit derivee.txt + consignes du profil
 ' ---------------------------------------------------------------------
-Public Function ConstruirePrompt(ByVal code As String, ByVal modalite As String, _
-                                 ByVal tutoiement As Boolean, ByVal identitePatient As String, _
-                                 ByVal motif As String) As String
-    Dim d As Object, systeme As String, consigne As String, txtMod As String
-    Set d = DefinitionDemande(code)
-    If d Is Nothing Then Err.Raise vbObjectError + 503, "modDerivees", "Type de demande inconnu : " & code
-    txtMod = TexteModalite(code, modalite)
-    consigne = d("ConsigneType")
-    consigne = Replace(consigne, "<modalite>", txtMod)
-    consigne = Replace(consigne, "<patient>", identitePatient)
-    If tutoiement Then
-        consigne = Replace(consigne, "<te/vous>", "te")
-        consigne = Replace(consigne, "<ton/votre>", "ton")
-    Else
-        consigne = Replace(consigne, "<te/vous>", "vous")
-        consigne = Replace(consigne, "<ton/votre>", "votre")
-    End If
+Public Function ConstruirePrompt(ByVal p As Object, ByVal modalite As String, ByVal tutoiement As Boolean, _
+                                 ByVal identitePatient As String, ByVal motif As String, _
+                                 ByVal phrasesPrescription As String) As String
+    Dim systeme As String
     ' les lettres de consultation ne servent PAS de reference de style :
     ' c'est precisement ce qui produisait des demandes en forme de resume
     systeme = modClaude.ChargerPrompt("derivee.txt", False)
-    systeme = Replace(systeme, "{{TYPE_DEMANDE}}", LibelleDemande(code, modalite))
-    systeme = Replace(systeme, "{{CONSIGNES_TYPE}}", consigne)
+    systeme = Replace(systeme, "{{TYPE_DEMANDE}}", modDemandes.LibelleProfil(p, modalite))
+    systeme = Replace(systeme, "{{CONSIGNES_TYPE}}", _
+        modDemandes.ConsignesProfil(p, modalite, tutoiement, identitePatient, motif, phrasesPrescription))
     systeme = Replace(systeme, "{{PATIENT}}", identitePatient)
     systeme = Replace(systeme, "{{TUTOIEMENT}}", IIf(tutoiement, _
-        "Le destinataire est un confrère proche : tutoiement (""Je te serais reconnaissant"", ""ton service"").", _
-        "Le destinataire est vouvoyé (""Je vous serais reconnaissant"", ""votre service"")."))
+        "Le destinataire est un confrère proche : tutoiement (« Je te serais reconnaissant », « ton service »).", _
+        "Le destinataire est vouvoyé (« Je vous serais reconnaissant », « votre service »)."))
     If Len(Trim$(motif)) > 0 Then
-        systeme = Replace(systeme, "{{MOTIF}}", "Motif ou question précisé par le medecin (a reprendre tel quel, en une phrase) : " & Trim$(motif))
+        systeme = Replace(systeme, "{{MOTIF}}", "Motif ou question précisé par le médecin (à reprendre tel quel) : " & Trim$(motif))
     Else
-        systeme = Replace(systeme, "{{MOTIF}}", "Aucun motif particulier n'a été precise : déduis-le sobrement du courrier source, sans le surinterpréter.")
+        systeme = Replace(systeme, "{{MOTIF}}", "Aucun motif particulier n'a été saisi : déduis-le sobrement de la phrase de prescription et du courrier source, sans le surinterpréter.")
     End If
     ConstruirePrompt = systeme
 End Function
 
-' Generation sans interface (testable)
-Public Function GenererDerivee(ByVal docSource As Document, ByVal code As String, _
-                               ByVal destNouveau As Object, Optional ByVal modalite As String = "", _
-                               Optional ByVal motif As String = "") As Document
+' Generation sans interface (testable). Renvoie Nothing si le medecin
+' refuse l'envoi apres le scan residuel.
+Public Function GenererDepuisProfil(ByVal docSource As Document, ByVal p As Object, _
+                                    ByVal destNouveau As Object, ByVal modalite As String, _
+                                    ByVal motif As String, ByVal phrasesPrescription As String) As Document
     Dim pat As Object, corSource As Object, ctx As Object
     Dim corps As String, anonyme As String, problemes As String
     Dim systeme As String, reponse As String, final As String
     Dim nouveauDoc As Document, prog As ufProgression
-    Dim identite As String, tutoiement As Boolean, libelle As String
+    Dim identite As String, tutoiement As Boolean, libelle As String, phrasesAnonymes As String
 
     Set pat = modClaude.PatientDuDocument(docSource)
     Set corSource = modClaude.CorrespondantDuDocument(docSource)
@@ -412,7 +302,7 @@ Public Function GenererDerivee(ByVal docSource As Document, ByVal code As String
     If Len(Trim$(corps)) < 10 Then
         Err.Raise vbObjectError + 500, "modDerivees", "Le courrier source est vide."
     End If
-    libelle = LibelleDemande(code, modalite)
+    libelle = modDemandes.LibelleProfil(p, modalite)
 
     Set ctx = modAnonymise.Construire(pat, corSource)
     ' le nouveau destinataire peut aussi etre cite dans le courrier source
@@ -420,11 +310,13 @@ Public Function GenererDerivee(ByVal docSource As Document, ByVal code As String
         modAnonymise.AjouterCorrespondant ctx, destNouveau, "DEST2"
     End If
     anonyme = modAnonymise.Anonymiser(corps, ctx)
-    ' identite du patient (civilite, prenom, nom, age) : balisee elle aussi
+    ' identite du patient (civilite, prenom, nom, age) et phrases de
+    ' prescription : balisees elles aussi
     identite = modAnonymise.Anonymiser(modCourrier.TexteIdentitePatient(pat), ctx)
-    problemes = modAnonymise.ScanResiduel(anonyme & vbCr & identite, ctx)
+    phrasesAnonymes = modAnonymise.Anonymiser(phrasesPrescription, ctx)
+    problemes = modAnonymise.ScanResiduel(anonyme & vbCr & identite & vbCr & phrasesAnonymes, ctx)
     If Len(problemes) > 0 Then
-        If MsgBox("L'anonymisation a detecte un risque avant envoi :" & vbCrLf & vbCrLf & _
+        If MsgBox("L'anonymisation a detecte un risque avant envoi (" & libelle & ") :" & vbCrLf & vbCrLf & _
                   problemes & vbCrLf & "Envoyer QUAND MEME a l'API ?", _
                   vbYesNo + vbExclamation + vbDefaultButton2, "Cabinet - protection des donnees") <> vbYes Then
             Exit Function
@@ -432,7 +324,7 @@ Public Function GenererDerivee(ByVal docSource As Document, ByVal code As String
     End If
 
     tutoiement = modCourrier.EstTutoye(destNouveau)
-    systeme = ConstruirePrompt(code, modalite, tutoiement, identite, motif)
+    systeme = ConstruirePrompt(p, modalite, tutoiement, identite, motif, phrasesAnonymes)
 
     Set prog = New ufProgression
     prog.Show vbModeless
@@ -453,13 +345,14 @@ Public Function GenererDerivee(ByVal docSource As Document, ByVal code As String
     final = modAnonymise.Reinjecter(reponse, ctx)
 
     Set nouveauDoc = modCourrier.CreerCourrierPour(pat, destNouveau, "demande - " & libelle)
+    nouveauDoc.Variables("ProfilDemande") = p("Code")
     modCourrier.RemplacerCorps nouveauDoc, modClaude.NettoyerReponse(final)
     On Error Resume Next
     modGras.AppliquerGras nouveauDoc
     If Err.Number <> 0 Then modLog.LogErreur "Gras lettre derivee : " & Err.Description
     On Error GoTo 0
     Application.StatusBar = "Demande '" & libelle & "' generee : relisez avant validation."
-    Set GenererDerivee = nouveauDoc
+    Set GenererDepuisProfil = nouveauDoc
     Exit Function
 ErreurApi:
     If Not prog Is Nothing Then Unload prog

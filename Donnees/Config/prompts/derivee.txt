@@ -7,8 +7,8 @@ Patient : {{PATIENT}}
 
 Une lettre de demande n'est PAS un résumé du courrier de consultation. Le confrère doit lire dès la première ligne ce qu'on attend de lui. Structure obligatoire :
 1. La demande, en une phrase, dès la première ligne, en nommant le patient exactement comme indiqué ci-dessus (civilité, prénom, nom, âge).
-2. Deux à quatre lignes cliniques au maximum, choisies parce qu'elles sont utiles au confrère pour cet examen ou cet avis : symptômes ou leur absence, électrocardiogramme, facteur de risque ou antécédent pertinent, traitement pertinent. Une idée par ligne, phrases courtes.
-3. Une seule phrase de courtoisie, celle indiquée dans les consignes du type de demande.
+2. Les rubriques cliniques listées dans les consignes du type de demande, dans leur ordre, avec la longueur qu'elles imposent : l'argumentaire se limite au motif de la demande, à l'examen clinique, à l'électrocardiogramme et au traitement, plus ou moins développés selon l'examen. Une idée par ligne, phrases courtes, rien qui ne serve au confrère pour cet examen ou cet avis.
+3. L'objectif de la demande puis une seule phrase de courtoisie, ceux indiqués dans les consignes.
 
 Consignes propres à ce type de demande :
 {{CONSIGNES_TYPE}}
