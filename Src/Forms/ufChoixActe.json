@@ -1,0 +1,18 @@
+{
+  "caption": "Traitement du courrier - actes réalisés",
+  "width": 520,
+  "height": 468,
+  "controls": [
+    { "type": "Label",   "name": "lblInfo",     "left": 12,  "top": 10,  "width": 480, "height": 34, "caption": "", "fontsize": 11, "bold": true },
+    { "type": "CommandButton", "name": "btnOuvrir", "left": 12, "top": 48, "width": 140, "height": 26, "caption": "Ouvrir le courrier", "fontsize": 9 },
+    { "type": "Label",   "name": "lblActes",    "left": 12,  "top": 84,  "width": 470, "height": 18, "caption": "Actes réalisés (cliquez pour cocher plusieurs) :", "fontsize": 10 },
+    { "type": "ListBox", "name": "lstActes",    "left": 12,  "top": 104, "width": 480, "height": 150, "fontsize": 10 },
+    { "type": "Label",   "name": "lblTotal",    "left": 340, "top": 262, "width": 150, "height": 20, "caption": "Total : 0,00 EUR", "fontsize": 11, "bold": true },
+    { "type": "Label",   "name": "lblPaiement", "left": 12,  "top": 292, "width": 92,  "height": 18, "caption": "Paiement", "fontsize": 10 },
+    { "type": "ComboBox","name": "cmbPaiement", "left": 110, "top": 290, "width": 120, "height": 20, "fontsize": 10, "style": 2 },
+    { "type": "CheckBox","name": "chkTiers",    "left": 260, "top": 290, "width": 120, "height": 18, "caption": "Tiers payant", "fontsize": 10 },
+    { "type": "CheckBox","name": "chkFds",      "left": 12,  "top": 320, "width": 300, "height": 18, "caption": "Imprimer la feuille de soins CERFA", "fontsize": 10, "value": true },
+    { "type": "CommandButton", "name": "btnOK",      "left": 260, "top": 360, "width": 140, "height": 32, "caption": "Enregistrer la séance", "default": true, "fontsize": 10 },
+    { "type": "CommandButton", "name": "btnAnnuler", "left": 410, "top": 360, "width": 82,  "height": 32, "caption": "Annuler", "cancel": true, "fontsize": 10 }
+  ]
+}

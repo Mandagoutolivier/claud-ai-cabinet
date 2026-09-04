@@ -1,0 +1,22 @@
+{
+  "caption": "Prise de rendez-vous",
+  "width": 430,
+  "height": 320,
+  "controls": [
+    { "type": "Label",   "name": "lblPatient",   "left": 12,  "top": 16,  "width": 250, "height": 20, "caption": "(aucun patient choisi)", "fontsize": 10, "bold": true },
+    { "type": "CommandButton", "name": "btnPatient", "left": 280, "top": 12, "width": 110, "height": 24, "caption": "Choisir patient...", "fontsize": 9 },
+    { "type": "Label",   "name": "lblDate",      "left": 12,  "top": 52,  "width": 92,  "height": 18, "caption": "Date (jj/mm/aaaa)", "fontsize": 10 },
+    { "type": "TextBox", "name": "txtDate",      "left": 130, "top": 50,  "width": 90,  "height": 20, "fontsize": 10 },
+    { "type": "Label",   "name": "lblHeure",     "left": 240, "top": 52,  "width": 50,  "height": 18, "caption": "Heure", "fontsize": 10 },
+    { "type": "TextBox", "name": "txtHeure",     "left": 295, "top": 50,  "width": 55,  "height": 20, "fontsize": 10 },
+    { "type": "Label",   "name": "lblDuree",     "left": 12,  "top": 82,  "width": 92,  "height": 18, "caption": "Durée (min)", "fontsize": 10 },
+    { "type": "ComboBox","name": "cmbDuree",     "left": 130, "top": 80,  "width": 60,  "height": 20, "fontsize": 10, "style": 2 },
+    { "type": "Label",   "name": "lblType",      "left": 12,  "top": 112, "width": 92,  "height": 18, "caption": "Motif / acte prévu", "fontsize": 10 },
+    { "type": "ComboBox","name": "cmbType",      "left": 130, "top": 110, "width": 220, "height": 20, "fontsize": 10, "style": 2 },
+    { "type": "Label",   "name": "lblNotes",     "left": 12,  "top": 142, "width": 92,  "height": 18, "caption": "Notes", "fontsize": 10 },
+    { "type": "TextBox", "name": "txtNotes",     "left": 130, "top": 140, "width": 260, "height": 60, "fontsize": 10, "multiline": true },
+    { "type": "CommandButton", "name": "btnAgenda",  "left": 12,  "top": 225, "width": 120, "height": 30, "caption": "Voir l'agenda...", "fontsize": 10 },
+    { "type": "CommandButton", "name": "btnOK",      "left": 180, "top": 225, "width": 110, "height": 30, "caption": "Enregistrer RDV", "default": true, "fontsize": 10 },
+    { "type": "CommandButton", "name": "btnAnnuler", "left": 300, "top": 225, "width": 90,  "height": 30, "caption": "Annuler", "cancel": true, "fontsize": 10 }
+  ]
+}
