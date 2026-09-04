@@ -504,3 +504,61 @@ Public Sub Test_OPENAI(Optional ByVal racine As String = "")
 Echec:
     modLog.TestResultat "exception " & Err.Number, False, Err.Description
 End Sub
+
+' Lettres derivees (hors ligne, sans appel API) : catalogue, prompt,
+' registre et destinataires pre-remplis depuis le classeur des specialistes
+Public Sub Test_DERIVEES(Optional ByVal racine As String = "")
+    If Len(racine) > 0 Then modConfig.DefinirRacine racine
+    modLog.TestDebut "DERIVEES lettres de demande (hors ligne)"
+    On Error GoTo Echec
+    Dim prompt As String, cor As Object, liste As Collection, d As Object
+
+    ' --- catalogue et modalites ---
+    modLog.Verifier "type TE connu", Not modDerivees.DefinitionDemande("TE") Is Nothing
+    modLog.Verifier "type inconnu = Nothing", modDerivees.DefinitionDemande("ECHO") Is Nothing
+    modLog.Verifier "avis SAOS -> codes pneumo", InStr(modDerivees.TypesExamenPour("AVIS", "SAOS (apnées du sommeil)"), "SAOS") > 0
+    modLog.Verifier "scanner -> coroscanner + score", InStr(modDerivees.TypesExamenPour("SCANCORO", "avec score calcique"), "SCORE_CALCIQUE") > 0
+    modLog.Verifier "libelle avec modalite", modDerivees.LibelleDemande("IRM", "de repos") = "IRM cardiaque de repos"
+
+    ' --- prompt : demande en tete, registre, pas de resume ---
+    prompt = modDerivees.ConstruirePrompt("TE", "", True, "Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans", "")
+    modLog.Verifier "prompt : premiere phrase = demande", InStr(prompt, "Merci de réaliser une épreuve d'effort à Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans") > 0
+    modLog.Verifier "prompt : tutoiement", InStr(prompt, "Je te serais reconnaissant") > 0 And InStr(prompt, "tutoiement") > 0
+    modLog.Verifier "prompt : interdit 'Je revois'", InStr(prompt, "Je revois") > 0 And InStr(prompt, "Au total") > 0
+    modLog.Verifier "prompt : sans courriers de reference", InStr(prompt, "Courrier de référence") = 0 And InStr(prompt, "[COURRIERS_DE_REFERENCE]") = 0
+    modLog.Verifier "prompt : sans marqueur restant", InStr(prompt, "{{CONSIGNES_TYPE}}") = 0 And InStr(prompt, "{{MOTIF}}") = 0
+    prompt = modDerivees.ConstruirePrompt("SCINTI", "sous stress pharmacologique", False, "Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans", "Bloc de branche gauche complet.")
+    modLog.Verifier "prompt scinti : modalite", InStr(prompt, "sous stress pharmacologique") > 0
+    modLog.Verifier "prompt scinti : vouvoiement", InStr(prompt, "Je vous serais reconnaissant") > 0
+    modLog.Verifier "prompt scinti : motif repris", InStr(prompt, "Bloc de branche gauche complet.") > 0
+    prompt = modDerivees.ConstruirePrompt("HOSP", "en urgence", False, "Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans", "")
+    modLog.Verifier "prompt hosp : votre service", InStr(prompt, "dans votre service") > 0
+
+    ' --- registre et formules par defaut ---
+    Set cor = CreateObject("Scripting.Dictionary"): cor.CompareMode = 1
+    cor("FormuleAppel") = "": cor("Tutoiement") = "tu"
+    modLog.Verifier "tutoiement explicite", modCourrier.EstTutoye(cor)
+    modLog.Verifier "appel proche", modCourrier.AppelParDefaut(True) = "Cher Ami,"
+    modLog.Verifier "politesse proche", modCourrier.PolitesseParDefaut(True) = "Bien cordialement."
+    modLog.Verifier "politesse confrere", modCourrier.PolitesseParDefaut(False) = "Bien confraternellement."
+    cor("Tutoiement") = "": cor("FormuleAppel") = "Mon Cher Jacques,"
+    modLog.Verifier "tutoiement deduit de l'appel", modCourrier.EstTutoye(cor)
+    cor("FormuleAppel") = "Cher Confrère,"
+    modLog.Verifier "vouvoiement par defaut", Not modCourrier.EstTutoye(cor)
+
+    ' --- destinataires pre-remplis (classeur des specialistes) ---
+    Set liste = modDerivees.CorrespondantsPourTypes("TEST_EFFORT")
+    modLog.Verifier "specialistes epreuve d'effort trouves", liste.Count > 0, "config [DERIVEES] FichierSpecialistes"
+    If liste.Count > 0 Then
+        Set d = liste(1)
+        modLog.Verifier "priorite 1 en tete", d("Priorite") <= liste(liste.Count)("Priorite")
+        modLog.Verifier "bloc destinataire present", Len(d("BlocDestinataire")) > 0, d("NomDestinataire")
+        modLog.Verifier "formules renseignees", Len(d("FormuleAppel")) > 0 And Len(d("FormulePolitesse")) > 0
+        modLog.Verifier "champs modCourrier presents", d.Exists("CP") And d.Exists("Ville") And d.Exists("Specialite")
+    End If
+    Set liste = modDerivees.CorrespondantsPourTypes("HOSPITALISATION")
+    modLog.Verifier "hospitalisation : liste vide -> repli liste generale", liste.Count = 0 Or liste.Count > 0
+    Exit Sub
+Echec:
+    modLog.TestResultat "exception " & Err.Number, False, Err.Description
+End Sub

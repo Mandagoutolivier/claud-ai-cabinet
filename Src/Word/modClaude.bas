@@ -162,14 +162,17 @@ Private Function TexteVersUtf8(ByVal s As String) As Variant
 End Function
 
 ' Prompt systeme : fichier Config\prompts\<nom> + courriers de reference
-Public Function ChargerPrompt(ByVal nomFichier As String) As String
+' (avecReferences=False : le marqueur est simplement retire - les lettres
+' derivees ne doivent PAS imiter les comptes rendus de consultation)
+Public Function ChargerPrompt(ByVal nomFichier As String, _
+                              Optional ByVal avecReferences As Boolean = True) As String
     Dim chemin As String, prompt As String, refs As String
     chemin = modConfig.Chemin("Config") & "\prompts\" & nomFichier
     If Not modFichiers.FichierExiste(chemin) Then
         Err.Raise vbObjectError + 406, "modClaude", "Prompt introuvable : " & chemin
     End If
     prompt = modFichiers.LireTexteUTF8(chemin)
-    refs = ChargerReferences()
+    If avecReferences Then refs = ChargerReferences() Else refs = ""
     ChargerPrompt = Replace(prompt, "[COURRIERS_DE_REFERENCE]", refs)
 End Function
 

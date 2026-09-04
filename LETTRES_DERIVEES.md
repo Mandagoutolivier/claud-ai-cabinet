@@ -282,11 +282,51 @@ est marqué tutoiement. `{urgence}` : "programmée", "rapide", "en urgence".
   `SCINTI`, `SCANCORO`, `IRM`, `AVIS` par spécialité, `HOSP`), le ou les
   correspondants à proposer, le premier étant sélectionné par défaut.
 
-## 6. Mise en œuvre
+## 6. Mise en œuvre (réalisée le 04/09/2026)
 
-La correction se fait dans le module VBA de génération des courriers de
-`Cabinet.dotm` et dans les modèles associés. Ces sources ne sont pas encore
-dans le dépôt ; elles se trouvent dans le dossier `Src` et dans
-`Donnees\Modeles` du paquet sur le NAS. Chaque type ci-dessus doit devenir un
-gabarit distinct, alimenté par les variables de la section 3, et non un
-découpage du compte rendu.
+| Élément | Fichier |
+|---------|---------|
+| Catalogue des six demandes, modalités, consignes par type, destinataire pré-rempli | `Src/Word/modDerivees.bas` |
+| Gabarit du prompt (demande en tête, interdits du compte rendu, exemple attendu) | `Donnees/Config/prompts/derivee.txt` et `Src/ConfigDefaut/prompts/derivee.txt` |
+| Appel et formule par défaut selon tutoiement, bloc destinataire pré-composé | `Src/Word/modCourrier.bas` (`EstTutoye`, `AppelParDefaut`, `PolitesseParDefaut`) |
+| Prompt des dérivées chargé sans les courriers de référence | `Src/Word/modClaude.bas` (`ChargerPrompt`, paramètre `avecReferences`) |
+| Classeur des correspondants spécialistes lu pour pré-remplir le destinataire | `Donnees/Base/Correspondants_Specialistes.xlsx`, config `[DERIVEES] FichierSpecialistes` |
+| Test hors ligne | `Src/Word/modTests_Word.bas`, `Test_DERIVEES` |
+
+### Correspondance entre les demandes et les codes `TypeExamen` du classeur
+
+| Demande | Modalités proposées | Codes `TypeExamen` lus dans `Specialistes_ParType` |
+|---------|--------------------|-----------------------------------------------------|
+| `TE` | aucune | `TEST_EFFORT` |
+| `SCINTI` | d'effort ; sous stress pharmacologique ; couplée ; de repos | `SCINTIGRAPHIE_MYOCARDIQUE` |
+| `SCANCORO` | avec score calcique ; score calcique seul ; sans score calcique | `COROSCANNER`, `SCORE_CALCIQUE` |
+| `IRM` | de repos ; stress dobutamine ; stress vasodilatateur | `IRM` |
+| `AVIS` | neurologique ; gastro-entérologique ; SAOS ; rythmologique ; diabétologique ; vasculaire ; autre | `AVIS_NEUROLOGIE`, `AVIS_GASTRO_ENTEROLOGIE`, `SAOS` + `AVIS_PNEUMOLOGIE`, `AVIS_RYTHMOLOGIE`, `AVIS_DIABETOLOGIE`, `AVIS_VASCULAIRE`, `AVIS_AUTRE` |
+| `HOSP` | programmée ; rapide (sous 48 h) ; en urgence | `HOSPITALISATION` |
+
+Quand aucun spécialiste actif n'existe pour un code, ou quand le médecin
+choisit « Nouveau... » dans la liste, la liste générale des correspondants
+est proposée. Le classeur ne contient pas encore de ligne `HOSPITALISATION`
+ni `AVIS_NEUROLOGIE` : ajouter dans `Specialistes_ParType` une ligne par
+service (CCN en priorité 1) pour que le destinataire soit pré-rempli.
+
+### Ordre des formules d'appel et de politesse
+
+1. Colonnes `FormuleAppel` / `FormulePolitesse` de la ligne `Specialistes_ParType`.
+2. À défaut, `FormuleAppel` de la fiche `Specialistes`.
+3. À défaut, les valeurs de `config.ini` `[COURRIER]` : `AppelProche` /
+   `PolitesseProche` si `TutoiementVouvoiement` vaut `tu`, sinon
+   `AppelDefaut` / `PolitesseDefaut`.
+
+Le tutoiement pilote aussi la rédaction du corps par l'API (« Je te serais
+reconnaissant » / « Je vous serais reconnaissant »).
+
+### Déroulement de la commande Ctrl+Alt+D
+
+1. Choix du type de demande.
+2. Choix de la modalité, si le type en a.
+3. Motif ou question posée, facultatif, une phrase.
+4. Choix du destinataire, pré-rempli par type et trié par priorité.
+5. Anonymisation du courrier source et de l'identité du patient, appel de
+   l'API avec les consignes du type, vérification des balises, création du
+   courrier avec l'en-tête, l'appel et la formule du correspondant.

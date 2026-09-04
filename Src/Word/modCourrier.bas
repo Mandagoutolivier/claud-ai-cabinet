@@ -75,16 +75,22 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
                  modConfig.Config("MEDECIN", "AdresseLigne2") & vbCr & _
                  "Tel : " & modConfig.Config("MEDECIN", "Telephone")
 
-    destinataire = cor("Titre") & " " & cor("Prenom") & " " & cor("Nom") & vbCr & cor("Specialite")
-    If Len(cor("Adresse1")) > 0 Then destinataire = destinataire & vbCr & cor("Adresse1")
-    If Len(cor("Adresse2")) > 0 Then destinataire = destinataire & vbCr & cor("Adresse2")
-    destinataire = destinataire & vbCr & cor("CP") & " " & cor("Ville")
+    ' bloc destinataire pre-compose (classeur des specialistes : structures,
+    ' services...) sinon composition classique depuis la fiche
+    If cor.Exists("BlocDestinataire") Then destinataire = Trim$(cor("BlocDestinataire"))
+    If Len(destinataire) = 0 Then
+        destinataire = Trim$(cor("Titre") & " " & cor("Prenom") & " " & cor("Nom"))
+        If Len(cor("Specialite")) > 0 Then destinataire = destinataire & vbCr & cor("Specialite")
+        If Len(cor("Adresse1")) > 0 Then destinataire = destinataire & vbCr & cor("Adresse1")
+        If Len(cor("Adresse2")) > 0 Then destinataire = destinataire & vbCr & cor("Adresse2")
+        destinataire = destinataire & vbCr & cor("CP") & " " & cor("Ville")
+    End If
 
     concerne = "Concerne : " & modTexte.CiviliteCourte(pat("Sexe")) & " " & _
                pat("Prenom") & " " & pat("Nom") & ", " & modTexte.NeLe(pat("Sexe")) & " " & pat("DDN")
 
     appel = cor("FormuleAppel")
-    If Len(appel) = 0 Then appel = "Cher Confrère,"
+    If Len(appel) = 0 Then appel = AppelParDefaut(EstTutoye(cor))
 
     signature = Replace(modConfig.Config("MEDECIN", "Signature", ""), "|", vbCr)
     If Len(signature) = 0 Then
@@ -94,7 +100,7 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
 
     Dim politesse As String
     politesse = cor("FormulePolitesse")
-    If Len(politesse) = 0 Then politesse = "Confraternellement."
+    If Len(politesse) = 0 Then politesse = PolitesseParDefaut(EstTutoye(cor))
 
     RemplirSignet doc, "EXPEDITEUR", expediteur
     RemplirSignet doc, "DESTINATAIRE", destinataire
@@ -104,6 +110,39 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
     RemplirSignet doc, "POLITESSE", politesse
     RemplirSignet doc, "SIGNATURE", signature
 End Sub
+
+' --- registre du correspondant ----------------------------------------
+' Tutoiement : champ Tutoiement / TutoiementVouvoiement de la fiche
+' ("tu"), sinon deduit d'une formule d'appel familiere (Cher Ami, Mon Cher...)
+Public Function EstTutoye(ByVal cor As Object) As Boolean
+    Dim v As String, appel As String
+    If cor Is Nothing Then Exit Function
+    If cor.Exists("Tutoiement") Then v = LCase$(Trim$(cor("Tutoiement")))
+    If Len(v) = 0 And cor.Exists("TutoiementVouvoiement") Then v = LCase$(Trim$(cor("TutoiementVouvoiement")))
+    If v = "tu" Then EstTutoye = True: Exit Function
+    If v = "vous" Then Exit Function
+    If cor.Exists("FormuleAppel") Then appel = modTexte.Plier(cor("FormuleAppel"))
+    EstTutoye = (InStr(appel, "ami") > 0 Or InStr(appel, "mon cher") > 0 Or InStr(appel, "ma chere") > 0)
+End Function
+
+' Defauts du cabinet (decisions du 04/09/2026) : "Cher Ami" pour les
+' correspondants proches (tutoyes), "Cher Confrère" sinon ;
+' "Bien cordialement" au tutoiement, "Bien confraternellement" au vouvoiement.
+Public Function AppelParDefaut(ByVal tutoiement As Boolean) As String
+    If tutoiement Then
+        AppelParDefaut = modConfig.Config("COURRIER", "AppelProche", "Cher Ami,")
+    Else
+        AppelParDefaut = modConfig.Config("COURRIER", "AppelDefaut", "Cher Confrère,")
+    End If
+End Function
+
+Public Function PolitesseParDefaut(ByVal tutoiement As Boolean) As String
+    If tutoiement Then
+        PolitesseParDefaut = modConfig.Config("COURRIER", "PolitesseProche", "Bien cordialement.")
+    Else
+        PolitesseParDefaut = modConfig.Config("COURRIER", "PolitesseDefaut", "Bien confraternellement.")
+    End If
+End Function
 
 ' --- identite du patient dans le corps (Ctrl+Alt+P / voix) -----------
 ' Le medecin ne dicte JAMAIS l'identite : elle est inseree depuis la base.
