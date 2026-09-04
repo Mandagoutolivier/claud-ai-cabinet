@@ -32,8 +32,37 @@ function Ko([string]$t) { Write-Host "  !!  $t" -ForegroundColor Red; $script:er
 # ---------------------------------------------------------------- 0. controles
 Etape 'Controles prealables'
 if (-not (Test-Path $seed)) { throw "Paquet incomplet : dossier Donnees absent ($seed)" }
-foreach ($p in 'Word.Application', 'Excel.Application') {
-    try { $o = New-Object -ComObject $p; $o.Quit(); Ok "$p disponible" } catch { Ko "$p indisponible : Office 2016 installe ?" }
+# Instancie chaque application COM pour verifier sa presence, puis la libere
+# COMPLETEMENT (Quit + ReleaseComObject + GC) : sans cela un WINWORD.EXE ou
+# EXCEL.EXE orphelin survit au script et fait echouer le test de processus qui suit.
+function Liberer-Com([ref]$obj) {
+    if ($null -eq $obj.Value) { return }
+    try { $obj.Value.DisplayAlerts = $false } catch {}
+    try { $obj.Value.Quit() } catch {}
+    try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($obj.Value) } catch {}
+    $obj.Value = $null
+}
+$appsCom = @{ 'Word.Application' = 'WINWORD'; 'Excel.Application' = 'EXCEL' }
+foreach ($p in $appsCom.Keys) {
+    $o = $null
+    try {
+        $o = New-Object -ComObject $p
+        Ok "$p disponible"
+    } catch {
+        Ko "$p indisponible : Office 2016 installe ?"
+    } finally {
+        Liberer-Com ([ref]$o)
+    }
+}
+[GC]::Collect()
+[GC]::WaitForPendingFinalizers()
+[GC]::Collect()
+# Attend que les instances lancees ci-dessus aient reellement disparu (jusqu'a 10 s)
+# AVANT de tester les processus : sinon on confond nos propres instances en cours
+# de fermeture avec un Word/Excel ouvert par l'utilisateur.
+$attente = 0
+while ($attente -lt 20 -and (Get-Process -Name @($appsCom.Values) -ErrorAction SilentlyContinue)) {
+    Start-Sleep -Milliseconds 500; $attente++
 }
 $wordOuvert = Get-Process WINWORD -ErrorAction SilentlyContinue
 $excelOuvert = Get-Process EXCEL -ErrorAction SilentlyContinue
