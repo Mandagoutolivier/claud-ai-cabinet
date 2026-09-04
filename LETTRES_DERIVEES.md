@@ -33,7 +33,7 @@ pression artérielle).
    "Madame, Monsieur" ni de "Veuillez agréer" dans une lettre à un confrère.
 2. **Vouvoiement possible** pour un correspondant inconnu ou un service
    hospitalier : appel "Cher confrère" / "Chère consœur", vouvoiement,
-   formule "Confraternellement". Le choix vient de la fiche correspondant
+   formule "Bien confraternellement". Le choix vient de la fiche correspondant
    (champ `tutoiement` oui/non), à défaut vouvoiement.
 3. **La demande ouvre la lettre.** La première phrase dit ce qui est demandé
    et pour qui : "Merci de réaliser [examen] à [Madame/Monsieur Prénom NOM],
@@ -64,7 +64,7 @@ pression artérielle).
 | `{ddn}` | Date de naissance |
 | `{appel}` | Cher confrère / Chère consœur / Cher ami / Chère amie |
 | `{tu_vous}` | Sélecteur de conjugaison, tutoiement ou vouvoiement |
-| `{formule}` | Bien cordialement / Confraternellement |
+| `{formule}` | Bien cordialement / Bien confraternellement |
 | `{symptomes}` | Ligne clinique, par ex. "Elle est totalement asymptomatique." |
 | `{ecg}` | Ligne ECG, par ex. "L'électrocardiogramme est normal." |
 | `{fdr}` | Facteurs de risque, facultatif |
@@ -258,7 +258,7 @@ Je vous adresse {civilite} {prenom} {nom}, {age} ans, pour une hospitalisation
 
 Je vous remercie de bien vouloir {verbe_hosp}.
 
-Confraternellement
+Bien confraternellement
 {signature}
 ```
 
@@ -268,14 +268,19 @@ est marqué tutoiement. `{urgence}` : "programmée", "rapide", "en urgence".
 `{verbe_hosp}` : "prendre en charge ce patient" / "cette patiente".
 `{antecedents}` : ligne reprenant les antécédents cardiologiques majeurs.
 
-## 5. Points à trancher par le médecin
+## 5. Décisions du médecin (04/09/2026)
 
-- Confirmer "Cher ami" pour certains correspondants, ou "Cher confrère"
-  pour tous.
-- Confirmer la formule au vouvoiement : "Confraternellement" ou
-  "Bien confraternellement".
-- Fournir la liste des correspondants habituels par type de demande, pour
-  pré-remplir le destinataire (centre de scintigraphie, radiologue, CCN).
+- **Appel** : "Cher confrère" / "Chère consœur" par défaut ; "Cher ami" /
+  "Chère amie" pour les correspondants marqués comme proches dans la base des
+  correspondants (champ `proche` oui/non). Un correspondant proche est
+  tutoyé.
+- **Formule au vouvoiement** : "Bien confraternellement". Au tutoiement :
+  "Bien cordialement".
+- **Destinataire pré-rempli** : la liste des correspondants habituels par type
+  de demande est définie dans le classeur Excel des correspondants du paquet
+  (`Donnees`). Le logiciel y lit, pour chaque code de demande (`TE`,
+  `SCINTI`, `SCANCORO`, `IRM`, `AVIS` par spécialité, `HOSP`), le ou les
+  correspondants à proposer, le premier étant sélectionné par défaut.
 
 ## 6. Mise en œuvre
 
