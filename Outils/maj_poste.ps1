@@ -115,18 +115,29 @@ $LASTEXITCODE = 0
 
 # ------------------------------------------------------------ 3. construction des modeles
 $deployNas = Join-Path $dev 'Donnees\Modeles\Deploy'
+$avant = @{}
+foreach ($m in 'Cabinet.dotm', 'Cabinet.xlsm') {
+    $p = Join-Path $deployNas $m
+    $avant[$m] = if (Test-Path $p) { (Get-Item $p).LastWriteTime } else { [datetime]::MinValue }
+}
 if (-not $SansConstruction) {
     Etape 'Construction de Cabinet.dotm et Cabinet.xlsm'
     $script = Join-Path $build 'build.ps1'
     if (-not (Test-Path $script)) { throw "build.ps1 introuvable : $script" }
     Info 'Word et Excel vont s ouvrir automatiquement : ne touchez a rien pendant la construction.'
     & $script
-    if ($LASTEXITCODE -ne 0) { throw "Construction echouee (acces approuve au modele d'objet VBA active dans Word ET Excel ?)." }
+    if ($LASTEXITCODE -ne 0) { throw "Construction echouee (acces approuve au modele d'objet VBA activee dans Word ET Excel ?)." }
 }
 foreach ($m in 'Cabinet.dotm', 'Cabinet.xlsm') {
     $p = Join-Path $deployNas $m
-    if (Test-Path $p) { Ok "$m construit le $((Get-Item $p).LastWriteTime)" }
-    else { throw "$m absent de $deployNas : la construction n'a pas abouti." }
+    if (-not (Test-Path $p)) { throw "$m absent de $deployNas : la construction n'a pas abouti." }
+    $date = (Get-Item $p).LastWriteTime
+    if (-not $SansConstruction -and $date -le $avant[$m]) {
+        throw ("$m N'A PAS ETE RECONSTRUIT (toujours du $date).`n" +
+               "build.ps1 s'est termine sans regenerer le modele : le poste installerait l'ancienne version.`n" +
+               "Lancez `"$script`" a la main et lisez son message d'erreur (acces approuve au modele d'objet VBA ? Word ou Excel encore ouvert ?).")
+    }
+    Ok "$m construit le $date"
 }
 
 # ------------------------------------------------------------ 4. paquet d'installation local
