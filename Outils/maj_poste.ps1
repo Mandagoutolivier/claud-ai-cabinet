@@ -115,9 +115,13 @@ $LASTEXITCODE = 0
 
 # ------------------------------------------------------------ 3. construction des modeles
 $deployNas = Join-Path $dev 'Donnees\Modeles\Deploy'
+# build.ps1 ecrit les modeles dans Build\out : c'est LA sortie de reference.
+# Donnees\Modeles\Deploy n'est qu'une copie de distribution, qu'il faut
+# rafraichir apres chaque construction (sinon on reinstalle l'ancien modele).
+$sortie = Join-Path $build 'out'
 $avant = @{}
 foreach ($m in 'Cabinet.dotm', 'Cabinet.xlsm') {
-    $p = Join-Path $deployNas $m
+    $p = Join-Path $sortie $m
     $avant[$m] = if (Test-Path $p) { (Get-Item $p).LastWriteTime } else { [datetime]::MinValue }
 }
 if (-not $SansConstruction) {
@@ -128,16 +132,17 @@ if (-not $SansConstruction) {
     & $script
     if ($LASTEXITCODE -ne 0) { throw "Construction echouee (acces approuve au modele d'objet VBA activee dans Word ET Excel ?)." }
 }
+New-Item -ItemType Directory -Force -Path $deployNas | Out-Null
 foreach ($m in 'Cabinet.dotm', 'Cabinet.xlsm') {
-    $p = Join-Path $deployNas $m
-    if (-not (Test-Path $p)) { throw "$m absent de $deployNas : la construction n'a pas abouti." }
+    $p = Join-Path $sortie $m
+    if (-not (Test-Path $p)) { throw "$m absent de $sortie : la construction n'a pas abouti." }
     $date = (Get-Item $p).LastWriteTime
     if (-not $SansConstruction -and $date -le $avant[$m]) {
         throw ("$m N'A PAS ETE RECONSTRUIT (toujours du $date).`n" +
-               "build.ps1 s'est termine sans regenerer le modele : le poste installerait l'ancienne version.`n" +
-               "Lancez `"$script`" a la main et lisez son message d'erreur (acces approuve au modele d'objet VBA ? Word ou Excel encore ouvert ?).")
+               "Lancez `"$script`" a la main et lisez son message d'erreur.")
     }
-    Ok "$m construit le $date"
+    Copy-Item $p (Join-Path $deployNas $m) -Force
+    Ok "$m construit le $date, publie dans Modeles\Deploy"
 }
 
 # ------------------------------------------------------------ 4. paquet d'installation local
