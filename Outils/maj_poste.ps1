@@ -62,16 +62,27 @@ Ok "version recuperee : $version"
 # ------------------------------------------------------------ 2. NAS : dossier de construction
 Etape "Mise a jour du dossier de construction : $dev"
 New-Item -ItemType Directory -Force -Path $dev | Out-Null
+# ATTENTION : Src est MIROIR (le code vient de GitHub, rien d autre n a a y
+# vivre), mais Donnees est copie SANS /MIR et SANS toucher aux bases : les
+# fichiers nominatifs (Patients.xlsx, Journal_*.xlsx, Agenda_*.xlsx, dossiers
+# patients) ne sont PAS dans GitHub, ils ne doivent jamais etre effaces du NAS.
 # robocopy (et non Copy-Item) : gere les sous-dossiers, les accents et les
 # chemins UNC longs, et ne bute pas sur "le conteneur ne peut pas etre copie".
-foreach ($sd in 'Src', 'Donnees') {
-    $src = Join-Path $git $sd
-    if (Test-Path $src) {
-        robocopy $src (Join-Path $dev $sd) /MIR /NFL /NDL /NJH /NJS /NP /R:2 /W:2 | Out-Null
-        if ($LASTEXITCODE -ge 8) { throw "Copie de $sd vers le NAS echouee (code $LASTEXITCODE)." }
-        Ok "$sd copie"
-    }
-}
+robocopy (Join-Path $git 'Src') (Join-Path $dev 'Src') /MIR /NFL /NDL /NJH /NJS /NP /R:2 /W:2 | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "Copie de Src vers le NAS echouee (code $LASTEXITCODE)." }
+Ok 'Src copie (miroir)'
+
+# Donnees : on ajoute et on met a jour, on ne supprime jamais.
+# /XD : dossiers de donnees vivantes exclus de la mise a jour.
+robocopy (Join-Path $git 'Donnees') (Join-Path $dev 'Donnees') /E /NFL /NDL /NJH /NJS /NP /R:2 /W:2 `
+    /XD 'Patients' 'Actes' 'Echange' 'Sauvegardes' 'Logs' | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "Copie de Donnees vers le NAS echouee (code $LASTEXITCODE)." }
+Ok 'Donnees copie (configuration et modeles ; bases existantes conservees)'
+
+$basePat = Join-Path $dev 'Donnees\Base\Patients.xlsx'
+if (Test-Path $basePat) { Ok "base patients du NAS conservee : $basePat" }
+else { Info "pas de Patients.xlsx dans $dev\Donnees\Base : le logiciel creera une base vide a la premiere utilisation" }
+
 foreach ($f in 'installer_cabinet.ps1', 'README.md', 'LETTRES_DERIVEES.md', 'OPTIMISATIONS_20260905.md') {
     $s = Join-Path $git $f
     if (Test-Path $s) { Copy-Item $s (Join-Path $build $f) -Force -ErrorAction SilentlyContinue }
