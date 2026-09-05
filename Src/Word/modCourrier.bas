@@ -44,6 +44,7 @@ Public Function CreerCourrierPour(ByVal pat As Object, ByVal cor As Object, _
     ' PreparerStyleCorps rejoue la mise en forme de tous les paragraphes :
     ' le bloc adresse est reserre APRES lui, en dernier mot.
     MettreEnFormeDestinataire doc
+    FigerChampsDate doc
     doc.Variables("PatientID") = pat("ID")
     doc.Variables("CorrespondantID") = cor("ID")
     doc.Variables("TypeCourrier") = typeCourrier
@@ -276,6 +277,31 @@ Public Sub MettreEnFormeDestinataire(ByVal doc As Document)
         End With
     Next p
     If Err.Number <> 0 Then modLog.LogErreur "MettreEnFormeDestinataire : " & Err.Description
+End Sub
+
+' La date d'un courrier medical doit rester celle du jour de la
+' consultation. Le modele contient des champs { CREATEDATE }, { DATE }...
+' qui se RECALCULENT a chaque ouverture : une lettre relue six mois plus
+' tard afficherait la date du jour. On les remplace par leur texte.
+Public Sub FigerChampsDate(ByVal doc As Document)
+    On Error Resume Next
+    Dim story As Range, suite As Range, f As Field, i As Long
+    For Each story In doc.StoryRanges
+        Set suite = story
+        Do While Not suite Is Nothing
+            For i = suite.Fields.Count To 1 Step -1
+                Set f = suite.Fields(i)
+                Select Case f.Type
+                    Case wdFieldCreateDate, wdFieldDate, wdFieldTime, _
+                         wdFieldPrintDate, wdFieldSaveDate
+                        f.Update
+                        f.Unlink
+                End Select
+            Next i
+            Set suite = suite.NextStoryRange
+        Loop
+    Next story
+    If Err.Number <> 0 Then modLog.LogErreur "FigerChampsDate : " & Err.Description
 End Sub
 
 ' Depannage : resserrer le bloc adresse d'un courrier DEJA ouvert.
