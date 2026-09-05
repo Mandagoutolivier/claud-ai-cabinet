@@ -81,6 +81,38 @@ Private Function Nz(ByVal v As Variant) As String
     End If
 End Function
 
+' ---------------------------------------------------------------------
+' Installation neuve : la base n'existe pas encore. On la cree VIDE avec
+' ses colonnes plutot que d'echouer sur "Fichier introuvable" - le
+' medecin peut alors creer son premier patient depuis le poste secretaire.
+' xl : instance Excel invisible deja ouverte par l'appelant.
+' ---------------------------------------------------------------------
+Private Sub CreerBaseSiAbsente(ByVal xl As Object, ByVal fichier As String, ByVal feuilles As Variant)
+    Dim wb As Object, ws As Object, i As Long, j As Long, entetes As Variant
+    If modFichiers.FichierExiste(fichier) Then Exit Sub
+    modFichiers.EnsureDossier Left$(fichier, InStrRev(fichier, "\") - 1)
+    Set wb = xl.Workbooks.Add
+    Do While wb.Worksheets.Count > 1
+        wb.Worksheets(wb.Worksheets.Count).Delete
+    Loop
+    For i = LBound(feuilles) To UBound(feuilles)
+        If i = LBound(feuilles) Then
+            Set ws = wb.Worksheets(1)
+        Else
+            Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.Count))
+        End If
+        ws.Name = CStr(feuilles(i))
+        entetes = modSchemas.EntetesDe(CStr(feuilles(i)))
+        For j = LBound(entetes) To UBound(entetes)
+            ws.Cells(1, j - LBound(entetes) + 1).Value = entetes(j)
+        Next j
+        ws.Rows(1).Font.Bold = True
+    Next i
+    wb.SaveAs fichier, 51
+    wb.Close False
+    modLog.LogInfo "Base creee (vide) depuis Word : " & fichier
+End Sub
+
 ' Charge PATIENTS et CORRESPONDANTS en UNE session Excel
 Private Sub ChargerBases(ByVal forcer As Boolean)
     Dim xl As Object, wb As Object, tous As Collection, actifs As Collection, c As Object
@@ -90,6 +122,8 @@ Private Sub ChargerBases(ByVal forcer As Boolean)
     modLog.Etape "base : ouverture d'Excel invisible"
     Set xl = OuvrirExcel()
     On Error GoTo Nettoyage
+    modLog.Etape "base : verification de Patients.xlsx"
+    CreerBaseSiAbsente xl, modConfig.FichierPatients(), modSchemas.FeuillesBasePatients()
     modLog.Etape "base : copie locale de Patients.xlsx"
     Dim copie As String
     copie = modFichiers.CopieLocale(modConfig.FichierPatients())

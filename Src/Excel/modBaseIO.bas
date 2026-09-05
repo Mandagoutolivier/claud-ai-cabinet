@@ -11,9 +11,62 @@ Private mJourSauvegarde As String   ' "yyyymmdd|fichier" deja sauvegardes
 
 ' --- lecture (copie locale, fenetre cachee) ---------------------------
 
+' ---------------------------------------------------------------------
+' Base absente (installation neuve) : on la CREE vide avec ses colonnes
+' au lieu d'echouer sur "Fichier introuvable". Appele avant chaque acces
+' a Base\Patients.xlsx.
+' ---------------------------------------------------------------------
+Public Sub AssurerBasePatients()
+    Dim fichier As String
+    fichier = modConfig.FichierPatients()
+    If Not modFichiers.FichierExiste(fichier) Then
+        CreerClasseurMultiFeuilles fichier, modSchemas.FeuillesBasePatients()
+        modLog.LogInfo "Base Patients.xlsx creee (vide) : " & fichier
+    End If
+    modBaseIO.AssurerColonnes fichier, "PATIENTS", modSchemas.EntetesPatients()
+    modBaseIO.AssurerColonnes fichier, "CORRESPONDANTS", modSchemas.EntetesCorrespondants()
+End Sub
+
+' Cree le fichier de la base connue (aujourd'hui Patients.xlsx) s'il manque.
+Private Sub AssurerBaseConnue(ByVal fichier As String)
+    If modFichiers.FichierExiste(fichier) Then Exit Sub
+    If StrComp(fichier, modConfig.FichierPatients(), vbTextCompare) = 0 Then AssurerBasePatients
+End Sub
+
+Public Sub CreerClasseurMultiFeuilles(ByVal fichier As String, ByVal feuilles As Variant)
+    Dim wb As Workbook, i As Long, j As Long, ws As Worksheet, entetes As Variant
+    If modFichiers.FichierExiste(fichier) Then Exit Sub
+    modFichiers.EnsureDossier Left$(fichier, InStrRev(fichier, "\") - 1)
+    Application.ScreenUpdating = False
+    Set wb = Workbooks.Add
+    wb.Windows(1).Visible = False
+    Do While wb.Worksheets.Count > 1
+        Application.DisplayAlerts = False
+        wb.Worksheets(wb.Worksheets.Count).Delete
+        Application.DisplayAlerts = True
+    Loop
+    For i = LBound(feuilles) To UBound(feuilles)
+        If i = LBound(feuilles) Then
+            Set ws = wb.Worksheets(1)
+        Else
+            Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.Count))
+        End If
+        ws.Name = CStr(feuilles(i))
+        entetes = modSchemas.EntetesDe(CStr(feuilles(i)))
+        For j = LBound(entetes) To UBound(entetes)
+            ws.Cells(1, j - LBound(entetes) + 1).Value = entetes(j)
+        Next j
+        ws.Rows(1).Font.Bold = True
+    Next i
+    wb.SaveAs fichier, 51
+    wb.Close False
+    Application.ScreenUpdating = True
+End Sub
+
 Public Function LireTableX(ByVal fichier As String, ByVal feuille As String, _
                            Optional ByVal colonneNonVide As String = "ID") As Collection
     Dim wb As Workbook, col As Collection
+    AssurerBaseConnue fichier
     Application.ScreenUpdating = False
     Set wb = Workbooks.Open(modFichiers.CopieLocale(fichier), ReadOnly:=True, AddToMru:=False)
     wb.Windows(1).Visible = False
@@ -206,6 +259,7 @@ Private Sub OuvrirTransaction(ByVal fichier As String, ByRef wb As Workbook)
     ' NB : ne jamais nommer une variable comme une fonction du module
     ' (VBA est insensible a la casse : elle masquerait la fonction)
     Dim verrou As String
+    AssurerBaseConnue fichier
     modLog.LogInfo "transaction: verrou " & fichier
     verrou = NomVerrou(fichier)
     If Not modFichiers.AcquerirVerrou(verrou, 8000) Then
