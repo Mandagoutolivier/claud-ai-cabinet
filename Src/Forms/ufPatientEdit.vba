@@ -79,7 +79,8 @@ Private Sub btnOK_Click()
         Exit Sub
     End If
     If Not DateValide(txtDDN.Text) Then
-        MsgBox "Date de naissance invalide : utilisez le format jj/mm/aaaa.", vbExclamation, "Cabinet"
+        MsgBox "Date de naissance invalide : jj/mm/aaaa, date reelle du calendrier, non posterieure a aujourd'hui.", _
+               vbExclamation, "Cabinet"
         Exit Sub
     End If
     Set d = CreateObject("Scripting.Dictionary")
@@ -116,13 +117,12 @@ Erreur:
     MsgBox "Erreur : " & Err.Description, vbCritical, "Cabinet"
 End Sub
 
+' Validation calendaire stricte (modTexte) : le 31 fevrier est refuse,
+' et une date de naissance posterieure a aujourd'hui aussi.
 Private Function DateValide(ByVal s As String) As Boolean
-    Dim p() As String
-    s = Trim$(s)
-    p = Split(s, "/")
-    If UBound(p) <> 2 Then Exit Function
-    If Len(p(2)) <> 4 Then Exit Function
-    DateValide = IsDate(s) Or (Val(p(0)) >= 1 And Val(p(0)) <= 31 And Val(p(1)) >= 1 And Val(p(1)) <= 12 And Val(p(2)) > 1880)
+    If Not modTexte.DateFrValide(s) Then Exit Function
+    If modTexte.DateFr(s) > Date Then Exit Function
+    DateValide = True
 End Function
 
 Private Sub btnAgenda_Click()

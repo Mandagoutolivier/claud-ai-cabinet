@@ -246,7 +246,7 @@ Public Sub CorrigerCourrier()
     Set prog = Nothing
 
     ' 4. verification des balises au retour
-    problemes = modAnonymise.VerifierBalisesRetour(reponse, ctx)
+    problemes = modAnonymise.VerifierBalisesRetour(reponse, ctx, anonyme)
     If Len(problemes) > 0 Then
         modFichiers.EcrireTexteUTF8 modConfig.Chemin("Logs") & "\reponse_rejetee.txt", reponse
         MsgBox "La reponse de l'API a altere des balises d'identite ; le texte n'a PAS ete insere." & _

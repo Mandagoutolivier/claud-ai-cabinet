@@ -294,15 +294,10 @@ Erreur:
     MsgBox "Erreur : " & Err.Description, vbCritical, "Cabinet"
 End Sub
 
-Public Function CreneauLibre(ByVal d As Date, ByVal heure As String) As Boolean
-    Dim r As Object, rdvs As Collection
-    mLundi = d - Weekday(d, vbMonday) + 1
-    CreneauLibre = True
-    For Each r In RdvSemaine()
-        If DateDe(r("Date")) = d And MinutesDe(r("Heure")) = MinutesDe(heure) Then
-            If r("Statut") <> "Annule" Then CreneauLibre = False
-        End If
-    Next r
+Public Function CreneauLibre(ByVal d As Date, ByVal heure As String, _
+                             Optional ByVal dureeMin As String = "") As Boolean
+    If Len(dureeMin) = 0 Then dureeMin = CStr(modConfig.ConfigNum("AGENDA", "DureeDefautMin", 15))
+    CreneauLibre = (Len(modAgenda.ConflitRdv(Format$(d, "dd/mm/yyyy"), heure, dureeMin)) = 0)
 End Function
 
 Private Sub PrendreRdv(ByVal d As Date, ByVal heure As String)

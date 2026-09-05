@@ -51,21 +51,37 @@ End Sub
 Public Function ValiderDocument(ByVal doc As Document, ByVal silencieux As Boolean) As String
     Dim pat As Object, cor As Object
     Dim dossier As String, base As String, cheminDocx As String, cheminPdf As String
-    Dim d As Object, typeCourrier As String
+    Dim d As Object, typeCourrier As String, consultationID As String, dateActe As String
 
     Set pat = modClaude.PatientDuDocument(doc)
     If pat Is Nothing Then Err.Raise vbObjectError + 520, "modValidation", "Document sans patient rattache."
     Set cor = modClaude.CorrespondantDuDocument(doc)
 
-    On Error Resume Next
-    typeCourrier = doc.Variables("TypeCourrier")
-    On Error GoTo 0
+    typeCourrier = VariableDoc(doc, "TypeCourrier")
     If Len(typeCourrier) = 0 Then typeCourrier = "courrier"
 
+    ' Identifiant stable du document : attribue a la premiere validation et
+    ' conserve dans le document. Une revalidation apres correction produit
+    ' une nouvelle VERSION du meme acte, jamais un acte supplementaire.
+    consultationID = VariableDoc(doc, "ConsultationID")
+    If Len(consultationID) = 0 Then
+        consultationID = modFichiers.IdUnique()
+        DefinirVariableDoc doc, "ConsultationID", consultationID
+    End If
+
+    ' Date REELLE de l'acte : celle de la consultation si elle est portee par
+    ' le document, sinon celle de la premiere validation (figee ensuite).
+    dateActe = VariableDoc(doc, "DateActe")
+    If Not modTexte.DateFrValide(dateActe) Then
+        dateActe = Format$(Date, "dd/mm/yyyy")
+        DefinirVariableDoc doc, "DateActe", dateActe
+    End If
+
     dossier = modPatient.DossierPatient(pat)
-    base = Format$(Now, "yyyymmdd-hhnn") & " " & modFichiers.NomFichierSur(typeCourrier)
-    cheminDocx = dossier & "\" & base & ".docx"
-    cheminPdf = dossier & "\" & base & ".pdf"
+    base = Format$(modTexte.DateFr(dateActe), "yyyy-mm-dd") & " " & _
+           modFichiers.NomFichierSur(typeCourrier) & " " & consultationID
+    cheminDocx = NomVersionne(dossier, base, "docx")
+    cheminPdf = Left$(cheminDocx, Len(cheminDocx) - 4) & "pdf"
 
     doc.SaveAs2 cheminDocx, 12                      ' wdFormatXMLDocument
     doc.ExportAsFixedFormat cheminPdf, 17           ' wdExportFormatPDF
@@ -77,6 +93,9 @@ Public Function ValiderDocument(ByVal doc As Document, ByVal silencieux As Boole
     d("DDN") = pat("DDN")
     d("NIR") = pat("NIR")
     d("TypeCourrier") = typeCourrier
+    d("ConsultationID") = consultationID
+    d("SeanceID") = consultationID
+    d("DateActe") = dateActe
     If Not cor Is Nothing Then d("DestinataireID") = cor("ID")
     d("CheminDocx") = cheminDocx
     d("CheminPdf") = cheminPdf
@@ -85,6 +104,33 @@ Public Function ValiderDocument(ByVal doc As Document, ByVal silencieux As Boole
     modFichiers.EcrireDrapeau modConfig.Chemin("Echange") & "\AEnvoyer", _
                               modFichiers.IdUnique() & "_" & pat("ID"), d
 
-    modLog.LogInfo "Courrier valide : " & cheminDocx
+    modLog.LogInfo "Courrier valide : " & cheminDocx & " (consultation " & consultationID & ")"
     ValiderDocument = typeCourrier
 End Function
+
+' Chemin libre : base.ext, puis "base v2.ext", "base v3.ext"... Les
+' corrections successives sont conservees au lieu de s'ecraser.
+Private Function NomVersionne(ByVal dossier As String, ByVal base As String, _
+                              ByVal ext As String) As String
+    Dim chemin As String, n As Long
+    chemin = dossier & "\" & base & "." & ext
+    n = 1
+    Do While Len(Dir$(chemin)) > 0
+        n = n + 1
+        chemin = dossier & "\" & base & " v" & n & "." & ext
+        If n > 200 Then Exit Do
+    Loop
+    NomVersionne = chemin
+End Function
+
+Private Function VariableDoc(ByVal doc As Document, ByVal nom As String) As String
+    On Error Resume Next
+    VariableDoc = doc.Variables(nom).Value
+    Err.Clear
+End Function
+
+Private Sub DefinirVariableDoc(ByVal doc As Document, ByVal nom As String, ByVal valeur As String)
+    On Error Resume Next
+    doc.Variables(nom).Value = valeur
+    Err.Clear
+End Sub

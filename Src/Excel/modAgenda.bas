@@ -14,10 +14,57 @@ Public Sub AssurerAgendaAnnee(Optional ByVal annee As Long = 0)
     modBaseIO.CreerClasseurSiAbsent modConfig.FichierAgenda(annee), "RDV", EntetesRdv()
 End Sub
 
+' Renvoie la description du RDV qui chevauche le creneau demande, "" si libre.
+' Les RDV annules ne bloquent pas. rdvIDExclu permet de deplacer un RDV existant.
+Public Function ConflitRdv(ByVal dateRdv As String, ByVal heure As String, _
+                           ByVal dureeMin As String, _
+                           Optional ByVal rdvIDExclu As String = "") As String
+    Dim r As Object, duree As Long, dureeAutre As Long
+    duree = Val(dureeMin)
+    If duree <= 0 Then duree = modConfig.ConfigNum("AGENDA", "DureeDefautMin", 15)
+    AssurerAgendaAnnee AnneeDeDate(dateRdv)
+    For Each r In modBaseIO.LireTableX(modConfig.FichierAgenda(AnneeDeDate(dateRdv)), "RDV")
+        If r("Date") = dateRdv And r("Statut") <> "Annule" Then
+            If Len(rdvIDExclu) = 0 Or r("ID") <> rdvIDExclu Then
+                dureeAutre = Val(r("DureeMin"))
+                If dureeAutre <= 0 Then dureeAutre = modConfig.ConfigNum("AGENDA", "DureeDefautMin", 15)
+                If modTexte.IntervallesSeChevauchent(heure, duree, r("Heure"), dureeAutre) Then
+                    ConflitRdv = r("Heure") & " (" & dureeAutre & " min, " & _
+                                 r("TypeActe") & ", " & r("Statut") & ")"
+                    Exit Function
+                End If
+            End If
+        End If
+    Next r
+End Function
+
+' forcer:=True enregistre malgre un chevauchement (double creneau assume).
 Public Function AjouterRdv(ByVal patientID As String, ByVal dateRdv As String, _
                            ByVal heure As String, ByVal dureeMin As String, _
-                           ByVal typeActe As String, ByVal notes As String) As String
-    Dim d As Object
+                           ByVal typeActe As String, ByVal notes As String, _
+                           Optional ByVal forcer As Boolean = False) As String
+    Dim d As Object, conflit As String
+    If Len(Trim$(patientID)) = 0 Then
+        Err.Raise vbObjectError + 620, "modAgenda", "Aucun patient : le rendez-vous n'a pas ete enregistre."
+    End If
+    If Not modTexte.DateFrValide(dateRdv) Then
+        Err.Raise vbObjectError + 621, "modAgenda", _
+            "Date de rendez-vous invalide : " & dateRdv & " (attendu jj/mm/aaaa, date existante)."
+    End If
+    If Not modTexte.HeureValide(heure) Then
+        Err.Raise vbObjectError + 622, "modAgenda", _
+            "Heure de rendez-vous invalide : " & heure & " (attendu hh:mm entre 00:00 et 23:59)."
+    End If
+    If Val(dureeMin) <= 0 Then
+        Err.Raise vbObjectError + 623, "modAgenda", "Duree de rendez-vous invalide : " & dureeMin & " minutes."
+    End If
+    If Not forcer Then
+        conflit = ConflitRdv(dateRdv, heure, dureeMin)
+        If Len(conflit) > 0 Then
+            Err.Raise vbObjectError + 624, "modAgenda", _
+                "Ce creneau chevauche un rendez-vous deja prevu le " & dateRdv & " a " & conflit & "."
+        End If
+    End If
     AssurerAgendaAnnee AnneeDeDate(dateRdv)
     Set d = CreateObject("Scripting.Dictionary")
     d("PatientID") = patientID

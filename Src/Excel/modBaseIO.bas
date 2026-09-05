@@ -73,7 +73,8 @@ Public Function AjouterLigne(ByVal fichier As String, ByVal feuille As String, _
         valeurs("ID") = id
     End If
     EcrireValeurs ws, ligne, valeurs
-    FermerTransaction fichier, wb, True
+    On Error GoTo 0
+    FermerTransaction fichier, wb, True     ' leve si l'enregistrement echoue
     AjouterLigne = id
     Exit Function
 Echec:
@@ -95,7 +96,8 @@ Public Sub ModifierLigne(ByVal fichier As String, ByVal feuille As String, _
     If ligne = 0 Then Err.Raise vbObjectError + 600, "modBaseIO", _
         "Introuvable : " & colonneCle & "=" & valeurCle & " dans " & feuille
     EcrireValeurs ws, ligne, valeurs
-    FermerTransaction fichier, wb, True
+    On Error GoTo 0
+    FermerTransaction fichier, wb, True     ' leve si l'enregistrement echoue
     Exit Sub
 Echec:
     Dim numErr As Long, descErr As String
@@ -116,7 +118,80 @@ Public Sub AjouterLignes(ByVal fichier As String, ByVal feuille As String, ByVal
         EcrireValeurs ws, ligne, valeurs
         ligne = ligne + 1
     Next valeurs
+    On Error GoTo 0
+    FermerTransaction fichier, wb, True     ' leve si l'enregistrement echoue
+    Exit Sub
+Echec:
+    Dim numErr As Long, descErr As String
+    numErr = Err.Number: descErr = Err.Description
+    FermerTransaction fichier, wb, False
+    Err.Raise numErr, "modBaseIO", descErr
+End Sub
+
+' Modifie TOUTES les lignes ou colonneCle = valeurCle (ex : toutes les
+' lignes du journal d'une meme seance). Renvoie le nombre de lignes modifiees.
+Public Function ModifierLignes(ByVal fichier As String, ByVal feuille As String, _
+                               ByVal colonneCle As String, ByVal valeurCle As String, _
+                               ByVal valeurs As Object) As Long
+    Dim wb As Workbook, ws As Worksheet, lignes As Collection, l As Variant
+    OuvrirTransaction fichier, wb
+    On Error GoTo Echec
+    Set ws = wb.Worksheets(feuille)
+    Set lignes = TrouverLignes(ws, colonneCle, valeurCle)
+    For Each l In lignes
+        EcrireValeurs ws, CLng(l), valeurs
+    Next l
+    ModifierLignes = lignes.Count
+    On Error GoTo 0
     FermerTransaction fichier, wb, True
+    Exit Function
+Echec:
+    Dim numErr As Long, descErr As String
+    numErr = Err.Number: descErr = Err.Description
+    FermerTransaction fichier, wb, False
+    Err.Raise numErr, "modBaseIO", descErr
+End Function
+
+' Ajoute a la premiere ligne les entetes manquants (migration d'un
+' classeur cree par une version anterieure). Ne touche a aucune donnee.
+Public Sub AssurerColonnes(ByVal fichier As String, ByVal feuille As String, ByVal entetes As Variant)
+    Dim wb As Workbook, ws As Worksheet, presents As Object, c As Long, i As Long
+    Dim derniere As Long, manque As Boolean
+    If Not modFichiers.FichierExiste(fichier) Then Exit Sub
+    ' lecture prealable sans verrou : n'ouvrir en ecriture que si necessaire
+    Set presents = CreateObject("Scripting.Dictionary")
+    presents.CompareMode = 1
+    On Error Resume Next
+    Set wb = Workbooks.Open(modFichiers.CopieLocale(fichier), ReadOnly:=True, AddToMru:=False)
+    If Err.Number <> 0 Then Exit Sub
+    wb.Windows(1).Visible = False
+    On Error GoTo 0
+    Set ws = wb.Worksheets(feuille)
+    derniere = ws.Cells(1, ws.Columns.Count).End(-4159).Column
+    For c = 1 To derniere
+        presents(Trim$(CStr(ws.Cells(1, c).Value))) = c
+    Next c
+    wb.Close False
+    For i = LBound(entetes) To UBound(entetes)
+        If Not presents.Exists(CStr(entetes(i))) Then manque = True
+    Next i
+    If Not manque Then Exit Sub
+
+    OuvrirTransaction fichier, wb
+    On Error GoTo Echec
+    Set ws = wb.Worksheets(feuille)
+    derniere = ws.Cells(1, ws.Columns.Count).End(-4159).Column
+    For i = LBound(entetes) To UBound(entetes)
+        If Not presents.Exists(CStr(entetes(i))) Then
+            derniere = derniere + 1
+            ws.Cells(1, derniere).Value = CStr(entetes(i))
+            ws.Cells(1, derniere).Font.Bold = True
+            presents(CStr(entetes(i))) = derniere
+        End If
+    Next i
+    On Error GoTo 0
+    FermerTransaction fichier, wb, True
+    modLog.LogInfo "Colonnes completees dans " & fichier & " (" & feuille & ")"
     Exit Sub
 Echec:
     Dim numErr As Long, descErr As String
@@ -157,16 +232,52 @@ EchecOuverture:
         "Impossible d'ouvrir " & fichier & " en ecriture (fichier ouvert sur un autre poste ?) : " & descErr
 End Sub
 
+' Ferme la transaction. enregistrer=True : l'enregistrement DOIT reussir,
+' sinon l'erreur est propagee a l'appelant (aucun "succes" silencieux :
+' la tache doit rester en attente et le message parvenir a la secretaire).
 Private Sub FermerTransaction(ByVal fichier As String, ByVal wb As Workbook, ByVal enregistrer As Boolean)
-    On Error Resume Next
-    ' la fenetre doit etre visible AVANT l'enregistrement : Excel memorise
-    ' l'etat masque dans le fichier, qui s'ouvrirait ensuite "sans fenetre"
-    If Not wb Is Nothing Then
-        If enregistrer Then wb.Windows(1).Visible = True
-        wb.Close SaveChanges:=enregistrer
+    Dim numErr As Long, descErr As String, ferme As Boolean
+    If wb Is Nothing Then
+        Application.ScreenUpdating = True
+        modFichiers.RelacherVerrou NomVerrou(fichier)
+        Exit Sub
     End If
+
+    If enregistrer Then
+        ' la fenetre doit etre visible AVANT l'enregistrement : Excel memorise
+        ' l'etat masque dans le fichier, qui s'ouvrirait ensuite "sans fenetre"
+        On Error Resume Next
+        wb.Windows(1).Visible = True
+        Err.Clear
+        wb.Save                                  ' <- l'echec est capture ici
+        numErr = Err.Number: descErr = Err.Description
+        On Error GoTo 0
+        If numErr = 0 Then
+            On Error Resume Next
+            wb.Close SaveChanges:=False          ' deja enregistre
+            ferme = (Err.Number = 0)
+            On Error GoTo 0
+        Else
+            ' echec d'enregistrement : fermer SANS enregistrer et signaler
+            On Error Resume Next
+            wb.Close SaveChanges:=False
+            On Error GoTo 0
+        End If
+    Else
+        On Error Resume Next
+        wb.Close SaveChanges:=False
+        On Error GoTo 0
+    End If
+
     Application.ScreenUpdating = True
     modFichiers.RelacherVerrou NomVerrou(fichier)
+
+    If enregistrer And numErr <> 0 Then
+        modLog.LogErreur "Enregistrement refuse : " & fichier & " : " & descErr
+        Err.Raise vbObjectError + 603, "modBaseIO", _
+            "L'enregistrement de " & fichier & " a ECHOUE : " & descErr & vbCrLf & _
+            "Rien n'a ete enregistre. Verifiez l'acces au dossier partage puis recommencez."
+    End If
 End Sub
 
 Private Function NomVerrou(ByVal fichier As String) As String
@@ -214,6 +325,24 @@ Private Function TrouverLigne(ByVal ws As Worksheet, ByVal colonneCle As String,
             TrouverLigne = r
             Exit Function
         End If
+    Next r
+End Function
+
+Private Function TrouverLignes(ByVal ws As Worksheet, ByVal colonneCle As String, _
+                               ByVal valeurCle As String) As Collection
+    Dim entetes As Object, c As Long, r As Long, colCle As Long, derniere As Long, res As Collection
+    Set res = New Collection
+    Set entetes = CreateObject("Scripting.Dictionary")
+    entetes.CompareMode = 1
+    For c = 1 To ws.Cells(1, ws.Columns.Count).End(-4159).Column
+        entetes(Trim$(CStr(ws.Cells(1, c).Value))) = c
+    Next c
+    Set TrouverLignes = res
+    If Not entetes.Exists(colonneCle) Then Exit Function
+    colCle = entetes(colonneCle)
+    derniere = ws.Cells(ws.Rows.Count, colCle).End(-4162).Row
+    For r = 2 To derniere
+        If Trim$(CStr(ws.Cells(r, colCle).Value)) = valeurCle Then res.Add r
     Next r
 End Function
 

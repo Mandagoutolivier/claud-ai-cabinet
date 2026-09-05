@@ -1,0 +1,26 @@
+# Regles de cotation du cabinet - fichier texte UTF-8, modifiable au Bloc-notes.
+# Une regle par ligne. Les lignes vides et celles commencant par # sont ignorees.
+#
+# Formats acceptes :
+#   INTERDIT=CODE1+CODE2;message      cumul de ces codes signale dans la meme seance
+#   UNIQUE=CODE;message               un seul exemplaire de ce code par seance
+#   MAXPARSEANCE=n;message            nombre total d'actes autorise dans la seance
+#
+# ATTENTION : ces regles sont un GARDE-FOU de saisie, pas la NGAP/CCAM.
+# La cotation reste sous la responsabilite du medecin.
+
+# Une consultation ne se cote qu'une fois par seance
+UNIQUE=CS;Une seule consultation par seance.
+UNIQUE=APC;Un seul avis ponctuel de consultant par seance.
+UNIQUE=CSC;Une seule consultation de cardiologie par seance.
+
+# Consultations non cumulables entre elles
+INTERDIT=CS+APC;Consultation et avis ponctuel de consultant ne se cumulent pas.
+INTERDIT=CS+CSC;Choisissez l'une ou l'autre des consultations.
+INTERDIT=APC+CSC;L'APC inclut deja la consultation de cardiologie.
+
+# L'ECG (DEQP003) est deja associe a la CSC : ne pas le coter deux fois
+UNIQUE=DEQP003;L'ECG est deja associe a la consultation de cardiologie.
+
+# La liasse cerfa S3110 ne comporte que 4 lignes d'actes ([CERFA] LignesMax)
+MAXPARSEANCE=4;Au-dela de 4 actes, une seconde feuille de soins est necessaire.

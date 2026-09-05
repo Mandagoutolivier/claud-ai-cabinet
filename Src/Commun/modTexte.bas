@@ -38,3 +38,74 @@ End Function
 Public Function NeLe(ByVal sexe As String) As String
     If UCase$(Left$(sexe, 1)) = "F" Then NeLe = "née le" Else NeLe = "né le"
 End Function
+
+' ---------------------------------------------------------------------
+' Dates et heures : validation STRICTE (le 31 février est refusé, une
+' heure doit être hh:mm entre 00:00 et 23:59).
+' ---------------------------------------------------------------------
+Public Function DateFrValide(ByVal s As String) As Boolean
+    Dim p() As String, j As Long, m As Long, a As Long
+    s = Trim$(s)
+    p = Split(s, "/")
+    If UBound(p) <> 2 Then Exit Function
+    If Len(p(0)) < 1 Or Len(p(0)) > 2 Then Exit Function
+    If Len(p(1)) < 1 Or Len(p(1)) > 2 Then Exit Function
+    If Len(p(2)) <> 4 Then Exit Function
+    If Not (EstEntier(p(0)) And EstEntier(p(1)) And EstEntier(p(2))) Then Exit Function
+    j = Val(p(0)): m = Val(p(1)): a = Val(p(2))
+    If m < 1 Or m > 12 Then Exit Function
+    If a < 1880 Or a > Year(Date) + 5 Then Exit Function
+    If j < 1 Or j > JoursDuMois(m, a) Then Exit Function
+    DateFrValide = True
+End Function
+
+Public Function DateFr(ByVal s As String) As Date
+    Dim p() As String
+    p = Split(Trim$(s), "/")
+    DateFr = DateSerial(Val(p(2)), Val(p(1)), Val(p(0)))
+End Function
+
+Public Function JoursDuMois(ByVal m As Long, ByVal a As Long) As Long
+    Select Case m
+        Case 1, 3, 5, 7, 8, 10, 12: JoursDuMois = 31
+        Case 4, 6, 9, 11: JoursDuMois = 30
+        Case 2
+            If (a Mod 4 = 0 And a Mod 100 <> 0) Or (a Mod 400 = 0) Then JoursDuMois = 29 Else JoursDuMois = 28
+    End Select
+End Function
+
+Private Function EstEntier(ByVal s As String) As Boolean
+    Dim i As Long
+    If Len(s) = 0 Then Exit Function
+    For i = 1 To Len(s)
+        If Mid$(s, i, 1) < "0" Or Mid$(s, i, 1) > "9" Then Exit Function
+    Next i
+    EstEntier = True
+End Function
+
+Public Function HeureValide(ByVal s As String) As Boolean
+    Dim p() As String
+    s = Replace(Trim$(s), "h", ":")
+    p = Split(s, ":")
+    If UBound(p) <> 1 Then Exit Function
+    If Not (EstEntier(Trim$(p(0))) And EstEntier(Trim$(p(1)))) Then Exit Function
+    If Val(p(0)) < 0 Or Val(p(0)) > 23 Then Exit Function
+    If Val(p(1)) < 0 Or Val(p(1)) > 59 Then Exit Function
+    HeureValide = True
+End Function
+
+' Minutes depuis minuit ; -1 si l'heure est invalide
+Public Function MinutesDepuisMinuit(ByVal heure As String) As Long
+    Dim p() As String
+    If Not HeureValide(heure) Then MinutesDepuisMinuit = -1: Exit Function
+    p = Split(Replace(Trim$(heure), "h", ":"), ":")
+    MinutesDepuisMinuit = Val(p(0)) * 60 + Val(p(1))
+End Function
+
+' Deux creneaux [debut, debut+duree[ se recouvrent-ils ?
+Public Function IntervallesSeChevauchent(ByVal debut1 As Long, ByVal duree1 As Long, _
+                                         ByVal debut2 As Long, ByVal duree2 As Long) As Boolean
+    If duree1 <= 0 Then duree1 = 1
+    If duree2 <= 0 Then duree2 = 1
+    IntervallesSeChevauchent = (debut1 < debut2 + duree2) And (debut2 < debut1 + duree1)
+End Function

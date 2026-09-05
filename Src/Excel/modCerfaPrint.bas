@@ -9,26 +9,72 @@ Option Explicit
 
 Private Const MM_EN_POINTS As Double = 2.834645
 
-' infos : dictionnaire (Nom, Prenom, DDN, NIR)
-' actes : Collection de dictionnaires (CodeActe/Code + Montant/Tarif)
-' versPdf : si renseigne, exporte en PDF au lieu d'imprimer (tests/controle)
-Public Sub ImprimerFeuille(ByVal infos As Object, ByVal actes As Collection, _
-                           Optional ByVal versPdf As String = "")
+' Remplit et imprime la feuille de soins papier.
+' infos : dictionnaire de la seance. Le PATIENT qui recoit les soins et
+'   l'ASSURE peuvent etre deux personnes differentes : le patient vient de
+'   Nom/Prenom/DDN/NIR, l'assure de AssureNom/AssurePrenom/AssureDDN/AssureNIR
+'   et, a defaut, le patient est son propre assure.
+'   MedTraitantNom : a renseigner quand le medecin intervient comme
+'   correspondant d'un patient adresse (rubrique parcours de soins).
+' actes : Collection de dictionnaires (CodeActe/Code, Montant/Tarif, DateActe)
+'   La DATE portee sur chaque ligne est celle de la REALISATION de l'acte,
+'   jamais la date du jour d'impression.
+' versPdf : si renseigne, exporte en PDF au lieu d'imprimer. Ce PDF ne
+'   reconstitue pas le fond du Cerfa : il sert au controle du calage.
+' Renvoie True quand le document a ete envoye a l'imprimante. Cela ne
+' prouve pas que la feuille est physiquement sortie : la confirmation
+' de la sortie papier est demandee a la secretaire par l'appelant.
+Public Function ImprimerFeuille(ByVal infos As Object, ByVal actes As Collection, _
+                                Optional ByVal versPdf As String = "") As Boolean
     Dim valeurs As Object, a As Object, i As Long, total As Double
-    Dim code As String, montant As String
+    Dim code As String, montant As String, dateLigne As String
+    Dim maxLignes As Long
+
+    maxLignes = CLng(modConfig.ConfigNum("CERFA", "LignesMax", 4))
+    If maxLignes < 1 Then maxLignes = 4
+    If actes.Count > maxLignes Then
+        ' refus explicite : aucune perte silencieuse d'acte ni de total
+        Err.Raise vbObjectError + 701, "modCerfaPrint", _
+            actes.Count & " actes pour une feuille de soins qui n'en porte que " & maxLignes & "." & vbCrLf & _
+            "Etablissez deux feuilles (traitez la seance en deux fois) ou corrigez la selection : " & _
+            "le logiciel n'imprime pas une feuille incomplete."
+    End If
 
     Set valeurs = CreateObject("Scripting.Dictionary")
     valeurs.CompareMode = 1
-    valeurs("ASSURE_NOM") = Trim$(ValeurOuVide(infos, "Nom") & " " & ValeurOuVide(infos, "Prenom"))
-    valeurs("ASSURE_NIR") = ValeurOuVide(infos, "NIR")
-    valeurs("ASSURE_DDN") = ValeurOuVide(infos, "DDN")
+
+    ' --- patient qui recoit les soins ---
+    valeurs("PATIENT_NOM") = Trim$(ValeurOuVide(infos, "Nom") & " " & ValeurOuVide(infos, "Prenom"))
+    valeurs("PATIENT_DDN") = ValeurOuVide(infos, "DDN")
+    valeurs("PATIENT_NIR") = ValeurOuVide(infos, "NIR")
+
+    ' --- assure : distinct s'il est renseigne, sinon le patient lui-meme ---
+    If Len(ValeurOuVide(infos, "AssureNom")) > 0 Then
+        valeurs("ASSURE_NOM") = Trim$(ValeurOuVide(infos, "AssureNom") & " " & ValeurOuVide(infos, "AssurePrenom"))
+        valeurs("ASSURE_DDN") = ValeurOuVide(infos, "AssureDDN")
+        valeurs("ASSURE_NIR") = ValeurOuVide(infos, "AssureNIR")
+    Else
+        valeurs("ASSURE_NOM") = valeurs("PATIENT_NOM")
+        valeurs("ASSURE_DDN") = valeurs("PATIENT_DDN")
+        valeurs("ASSURE_NIR") = valeurs("PATIENT_NIR")
+    End If
+
+    ' --- parcours de soins : medecin traitant du patient adresse ---
+    valeurs("MEDECIN_TRAITANT") = ValeurOuVide(infos, "MedTraitantNom")
+
     i = 0
     For Each a In actes
         i = i + 1
-        If i > 4 Then Exit For
         If a.Exists("CodeActe") Then code = a("CodeActe") Else code = ValeurOuVide(a, "Code")
         If a.Exists("Montant") Then montant = a("Montant") Else montant = ValeurOuVide(a, "Tarif")
-        valeurs("DATE" & i) = Format$(Date, "dd/mm/yyyy")
+        dateLigne = ValeurOuVide(a, "DateActe")
+        If Len(dateLigne) <> 10 Then dateLigne = ValeurOuVide(infos, "DateActe")
+        If Len(dateLigne) <> 10 Then
+            Err.Raise vbObjectError + 702, "modCerfaPrint", _
+                "Date de realisation manquante pour l'acte " & code & " : " & _
+                "la feuille de soins ne peut pas porter la date du jour a sa place."
+        End If
+        valeurs("DATE" & i) = dateLigne
         valeurs("CODE" & i) = code
         valeurs("MONTANT" & i) = Format$(Val(Replace(montant, ",", ".")), "0.00")
         total = total + Val(Replace(montant, ",", "."))
@@ -36,7 +82,8 @@ Public Sub ImprimerFeuille(ByVal infos As Object, ByVal actes As Collection, _
     valeurs("TOTAL") = Format$(total, "0.00")
 
     ImprimerDocumentCale valeurs, versPdf
-End Sub
+    ImprimerFeuille = True
+End Function
 
 ' Construit et imprime (ou exporte) le document cale
 Private Sub ImprimerDocumentCale(ByVal valeurs As Object, ByVal versPdf As String)

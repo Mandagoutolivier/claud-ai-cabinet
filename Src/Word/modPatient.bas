@@ -33,11 +33,56 @@ Public Function ChoisirCorrespondant(Optional ByVal preselectionID As String = "
     Unload f
 End Function
 
-' Dossier du patient dans Patients\ (cree si besoin)
+' Dossier du patient. Le nom du dossier commence TOUJOURS par l'identifiant
+' stable (ID) : un changement d'etat civil renomme le dossier au lieu d'en
+' creer un second. Les anciens dossiers "Nom_Prenom_ID" sont migres.
 Public Function DossierPatient(ByVal pat As Object) As String
-    Dim chemin As String
-    chemin = modConfig.Chemin("Patients") & "\" & _
-             modFichiers.NomFichierSur(pat("Nom") & "_" & pat("Prenom") & "_" & pat("ID"))
-    modFichiers.EnsureDossier chemin
-    DossierPatient = chemin
+    Dim racine As String, id As String, souhaite As String, existant As String
+    racine = modConfig.Chemin("Patients")
+    modFichiers.EnsureDossier racine
+    id = Trim$(CStr(pat("ID")))
+    If Len(id) = 0 Then
+        Err.Raise vbObjectError + 630, "modPatient", _
+            "Patient sans identifiant : impossible de determiner son dossier."
+    End If
+    souhaite = racine & "\" & modFichiers.NomFichierSur( _
+                   id & "_" & pat("Nom") & "_" & pat("Prenom"))
+    existant = DossierExistant(racine, id)
+    If Len(existant) > 0 Then
+        If StrComp(existant, souhaite, vbTextCompare) <> 0 Then
+            On Error Resume Next
+            Name existant As souhaite
+            If Err.Number <> 0 Then
+                ' renommage impossible (dossier ouvert, droits) : on garde l'existant
+                Err.Clear
+                On Error GoTo 0
+                DossierPatient = existant
+                Exit Function
+            End If
+            On Error GoTo 0
+        Else
+            DossierPatient = existant
+            Exit Function
+        End If
+    End If
+    modFichiers.EnsureDossier souhaite
+    DossierPatient = souhaite
+End Function
+
+' Cherche un dossier deja present pour cet ID : nouveau schema "ID_..."
+' ou ancien schema "Nom_Prenom_ID".
+Private Function DossierExistant(ByVal racine As String, ByVal id As String) As String
+    ' FileSystemObject (et non Dir$) : DossierPatient peut etre appele depuis
+    ' une boucle Dir$ de l'appelant, qui serait alors reinitialisee.
+    Dim fso As Object, dossier As Object, nom As String
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    If Not fso.FolderExists(racine) Then Exit Function
+    For Each dossier In fso.GetFolder(racine).SubFolders
+        nom = dossier.Name
+        If LCase$(Left$(nom, Len(id) + 1)) = LCase$(id & "_") Or _
+           LCase$(Right$(nom, Len(id) + 1)) = LCase$("_" & id) Then
+            DossierExistant = dossier.Path
+            Exit Function
+        End If
+    Next dossier
 End Function

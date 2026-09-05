@@ -3,9 +3,20 @@
 # Origine = coin superieur gauche de la feuille. A CALER sur votre liasse :
 # 1) bouton "Calage imprimante CERFA" (imprime des croix de repere),
 # 2) ajustez les positions ci-dessous d'apres le scan de votre liasse (jalon J6).
+# Un champ absent de ce fichier n'est simplement pas imprime : les rubriques
+# deja pre-imprimees sur vos formulaires personnalises n'ont pas a y figurer.
+# Le nombre de lignes d'actes imprimables est fixe par [CERFA] LignesMax.
+# --- Assure (celui qui ouvre droit) ---
 ASSURE_NOM;25;42;95;10
 ASSURE_NIR;118;36;85;11
 ASSURE_DDN;118;46;45;10
+# --- Patient qui recoit les soins (rubrique distincte quand ce n'est pas l'assure ;
+#     positions a relever sur votre liasse, les valeurs ci-dessous sont indicatives) ---
+PATIENT_NOM;25;58;95;10
+PATIENT_DDN;118;58;45;10
+PATIENT_NIR;118;66;85;10
+# --- Parcours de soins : medecin traitant du patient adresse ---
+MEDECIN_TRAITANT;25;76;120;9
 DATE1;22;168;20;9
 CODE1;48;168;35;9
 MONTANT1;150;168;28;9

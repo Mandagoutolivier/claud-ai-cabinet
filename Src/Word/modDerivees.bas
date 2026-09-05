@@ -295,6 +295,7 @@ Public Function GenererDepuisProfil(ByVal docSource As Document, ByVal p As Obje
     Dim systeme As String, reponse As String, final As String
     Dim nouveauDoc As Document, prog As ufProgression
     Dim identite As String, tutoiement As Boolean, libelle As String, phrasesAnonymes As String
+    Dim motifAnonyme As String
 
     Set pat = modClaude.PatientDuDocument(docSource)
     Set corSource = modClaude.CorrespondantDuDocument(docSource)
@@ -314,7 +315,11 @@ Public Function GenererDepuisProfil(ByVal docSource As Document, ByVal p As Obje
     ' prescription : balisees elles aussi
     identite = modAnonymise.Anonymiser(modCourrier.TexteIdentitePatient(pat), ctx)
     phrasesAnonymes = modAnonymise.Anonymiser(phrasesPrescription, ctx)
-    problemes = modAnonymise.ScanResiduel(anonyme & vbCr & identite & vbCr & phrasesAnonymes, ctx)
+    ' le motif est une saisie libre du medecin : il est balise et scanne
+    ' comme le reste avant de partir vers l'API
+    motifAnonyme = modAnonymise.Anonymiser(motif, ctx)
+    problemes = modAnonymise.ScanResiduel(anonyme & vbCr & identite & vbCr & _
+                                          phrasesAnonymes & vbCr & motifAnonyme, ctx)
     If Len(problemes) > 0 Then
         If MsgBox("L'anonymisation a detecte un risque avant envoi (" & libelle & ") :" & vbCrLf & vbCrLf & _
                   problemes & vbCrLf & "Envoyer QUAND MEME a l'API ?", _
@@ -324,7 +329,7 @@ Public Function GenererDepuisProfil(ByVal docSource As Document, ByVal p As Obje
     End If
 
     tutoiement = modCourrier.EstTutoye(destNouveau)
-    systeme = ConstruirePrompt(p, modalite, tutoiement, identite, motif, phrasesAnonymes)
+    systeme = ConstruirePrompt(p, modalite, tutoiement, identite, motifAnonyme, phrasesAnonymes)
 
     Set prog = New ufProgression
     prog.Show vbModeless
@@ -336,7 +341,8 @@ Public Function GenererDepuisProfil(ByVal docSource As Document, ByVal p As Obje
     Unload prog
     Set prog = Nothing
 
-    problemes = modAnonymise.VerifierBalisesRetour(reponse, ctx)
+    problemes = modAnonymise.VerifierBalisesRetour(reponse, ctx, _
+                    identite & vbCr & anonyme & vbCr & phrasesAnonymes & vbCr & motifAnonyme)
     If Len(problemes) > 0 Then
         modFichiers.EcrireTexteUTF8 modConfig.Chemin("Logs") & "\reponse_rejetee.txt", reponse
         Err.Raise vbObjectError + 501, "modDerivees", _

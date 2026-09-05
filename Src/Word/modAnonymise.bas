@@ -214,20 +214,37 @@ Public Function ScanResiduel(ByVal texteAnonyme As String, ByVal ctx As Object) 
     ScanResiduel = problemes
 End Function
 
-' Verifie que la reponse de l'API ne contient que des balises connues.
+' Verifie que la reponse de l'API ne contient que des balises connues ET
+' qu'aucune balise presente dans le texte envoye n'a disparu (une balise
+' perdue = une identite qui ne sera pas reinjectee, donc un courrier faux).
 ' Renvoie "" si tout est correct.
-Public Function VerifierBalisesRetour(ByVal texteRetour As String, ByVal ctx As Object) As String
+Public Function VerifierBalisesRetour(ByVal texteRetour As String, ByVal ctx As Object, _
+                                      Optional ByVal texteEnvoye As String = "") As String
     Dim re As Object, matchs As Object, m As Object, retour As Object, pb As String
+    Dim vues As Object
     Set retour = ctx("retour")
+    Set vues = CreateObject("Scripting.Dictionary")
     Set re = CreateObject("VBScript.RegExp")
     re.Global = True
     re.Pattern = "\{\{[^}]{1,40}\}\}"
     Set matchs = re.Execute(texteRetour)
     For Each m In matchs
+        vues(m.Value) = True
         If Not retour.Exists(m.Value) Then
             pb = pb & "- balise inconnue ou alteree : " & m.Value & vbCrLf
         End If
     Next m
+
+    If Len(texteEnvoye) > 0 Then
+        Set matchs = re.Execute(texteEnvoye)
+        For Each m In matchs
+            If retour.Exists(m.Value) And Not vues.Exists(m.Value) Then
+                pb = pb & "- balise disparue de la reponse : " & m.Value & vbCrLf
+                vues(m.Value) = True      ' ne signaler qu'une fois
+            End If
+        Next m
+    End If
+
     VerifierBalisesRetour = pb
 End Function
 

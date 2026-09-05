@@ -58,7 +58,7 @@ Public Sub Test_J1(Optional ByVal racine As String = "")
 
     ' --- agenda ---
     Dim rdvID As String, rdvs As Collection, r As Object
-    rdvID = modAgenda.AjouterRdv(id, Format$(Date, "dd/mm/yyyy"), "11:30", "30", "CSC", "test")
+    rdvID = modAgenda.AjouterRdv(id, Format$(Date, "dd/mm/yyyy"), "11:30", "30", "CSC", "test", True)
     modLog.Verifier "rdv cree", Left$(rdvID, 1) = "R", rdvID
     modAgenda.MarquerStatut rdvID, "Arrive"
     Set rdvs = modAgenda.RdvDuJour()
@@ -86,7 +86,7 @@ Public Sub Test_AGENDA(Optional ByVal racine As String = "")
     On Error GoTo Echec
     Dim ws As Worksheet, rdvID As String, auj As String, trouve As Boolean, c As Range, col As Long, j As Long
     auj = Format$(Date, "dd/mm/yyyy")
-    rdvID = modAgenda.AjouterRdv("P00002", auj, "10:00", "30", "ETT", "test agenda")
+    rdvID = modAgenda.AjouterRdv("P00002", auj, "10:00", "30", "ETT", "test agenda", True)
     modLog.Verifier "rdv de test cree", Len(rdvID) > 0, rdvID
     modAgendaVue.AfficherAgenda Date
     Set ws = ThisWorkbook.Worksheets("Agenda")
@@ -153,7 +153,7 @@ Public Sub Test_J5X(Optional ByVal racine As String = "")
     Set actes = New Collection
     actes.Add modActes.ActeParCode("CSC")
     Set d = modFichiers.LireDrapeau(chemin)
-    seanceID = modActes.EnregistrerSeance(d, actes, "CB", False, True)
+    seanceID = modActes.EnregistrerSeance(d, actes, "CB", modActes.TotalActes(actes), False, Format$(Date, "dd/mm/yyyy"))
     modLog.Verifier "seance enregistree", Len(seanceID) > 0, seanceID
 
     Set lignes = modBaseIO.LireTableX(modConfig.FichierJournal(), "JOURNAL", "SeanceID")
@@ -172,7 +172,7 @@ Public Sub Test_J5X(Optional ByVal racine As String = "")
     Dim pdf As String
     pdf = modConfig.Chemin("Logs") & "\cerfa_test.pdf"
     If Len(Dir$(pdf)) > 0 Then Kill pdf
-    modCerfaPrint.ImprimerFeuille d, modActes.LignesPourImpression(actes), pdf
+    modCerfaPrint.ImprimerFeuille d, modActes.LignesPourImpression(actes, Format$(Date, "dd/mm/yyyy")), pdf
     modLog.Verifier "feuille de soins exportee en PDF", Len(Dir$(pdf)) > 0, pdf
 
     ' archivage du drapeau

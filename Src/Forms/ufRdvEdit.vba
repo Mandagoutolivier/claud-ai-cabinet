@@ -60,21 +60,38 @@ End Sub
 
 Private Sub btnOK_Click()
     On Error GoTo Erreur
-    Dim id As String
+    Dim id As String, conflit As String, forcer As Boolean
     If mPatient Is Nothing Then
         MsgBox "Choisissez d'abord le patient.", vbExclamation, "Cabinet"
         Exit Sub
     End If
-    If Not IsDate(Trim$(txtDate.Text)) Then
-        MsgBox "Date invalide (jj/mm/aaaa).", vbExclamation, "Cabinet"
+    If Not modTexte.DateFrValide(Trim$(txtDate.Text)) Then
+        MsgBox "Date invalide : saisissez une date existante au format jj/mm/aaaa.", vbExclamation, "Cabinet"
+        txtDate.SetFocus
         Exit Sub
     End If
-    If Len(Trim$(txtHeure.Text)) < 4 Then
-        MsgBox "Heure invalide (hh:mm).", vbExclamation, "Cabinet"
+    If Not modTexte.HeureValide(Trim$(txtHeure.Text)) Then
+        MsgBox "Heure invalide : saisissez hh:mm entre 00:00 et 23:59.", vbExclamation, "Cabinet"
+        txtHeure.SetFocus
         Exit Sub
+    End If
+    If Val(cmbDuree.Text) <= 0 Then
+        MsgBox "Duree invalide : choisissez une duree en minutes.", vbExclamation, "Cabinet"
+        Exit Sub
+    End If
+    conflit = modAgenda.ConflitRdv(Trim$(txtDate.Text), Trim$(txtHeure.Text), cmbDuree.Text)
+    If Len(conflit) > 0 Then
+        If MsgBox("Ce creneau chevauche un rendez-vous deja prevu le " & txtDate.Text & _
+                  " a " & conflit & "." & vbCrLf & vbCrLf & _
+                  "Enregistrer quand meme (double creneau) ?", _
+                  vbQuestion + vbYesNo + vbDefaultButton2, "Cabinet") <> vbYes Then
+            txtHeure.SetFocus
+            Exit Sub
+        End If
+        forcer = True
     End If
     id = modAgenda.AjouterRdv(mPatient("ID"), Trim$(txtDate.Text), Trim$(txtHeure.Text), _
-                              cmbDuree.Text, cmbType.Text, Trim$(txtNotes.Text))
+                              cmbDuree.Text, cmbType.Text, Trim$(txtNotes.Text), forcer)
     MsgBox "RDV enregistre (" & id & ") : " & mPatient("Prenom") & " " & mPatient("Nom") & _
            " le " & txtDate.Text & " a " & txtHeure.Text & ".", vbInformation, "Cabinet"
     Me.Hide
