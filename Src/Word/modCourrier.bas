@@ -41,6 +41,9 @@ Public Function CreerCourrierPour(ByVal pat As Object, ByVal cor As Object, _
     Set doc = CreerDepuisModele("LETTRE TYPE")
     RemplirEnTete doc, pat, cor
     PreparerStyleCorps doc
+    ' PreparerStyleCorps rejoue la mise en forme de tous les paragraphes :
+    ' le bloc adresse est reserre APRES lui, en dernier mot.
+    MettreEnFormeDestinataire doc
     doc.Variables("PatientID") = pat("ID")
     doc.Variables("CorrespondantID") = cor("ID")
     doc.Variables("TypeCourrier") = typeCourrier
@@ -103,9 +106,11 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
     If Len(politesse) = 0 Then politesse = PolitesseParDefaut(EstTutoye(cor))
 
     RemplirSignet doc, "EXPEDITEUR", expediteur
-    ' l'adresse est UN paragraphe (sauts de ligne manuels) : lignes serrees
-    ' (interligne simple), sans espacement entre elles, entierement en gras
-    RemplirSignet doc, "DESTINATAIRE", Replace(destinataire, vbCr, Chr$(11))
+    ' l'adresse est UN SEUL paragraphe : tous les separateurs de ligne
+    ' (vbCrLf, vbCr, vbLf d'une cellule Excel saisie en Alt+Entree) sont
+    ' convertis en sauts de ligne manuels, sinon Word cree des paragraphes
+    ' espaces de 12 pt et le bloc s'aere.
+    RemplirSignet doc, "DESTINATAIRE", EnSautsDeLigne(destinataire)
     MettreEnFormeDestinataire doc
     RemplirSignet doc, "DATELIEU", modConfig.Config("GENERAL", "Ville") & ", le " & Format$(Date, "d mmmm yyyy")
     RemplirSignet doc, "CONCERNE", concerne
@@ -219,16 +224,42 @@ Public Sub PreparerStyleCorps(ByVal doc As Document)
     If Err.Number <> 0 Then modLog.LogErreur "PreparerStyleCorps : " & Err.Description
 End Sub
 
+' Tous les separateurs de ligne -> saut de ligne manuel (Chr 11), et
+' aucune ligne vide : le bloc adresse tient en un seul paragraphe.
+Public Function EnSautsDeLigne(ByVal texte As String) As String
+    Dim t As String
+    t = Replace(texte, vbCrLf, Chr$(11))
+    t = Replace(t, vbCr, Chr$(11))
+    t = Replace(t, vbLf, Chr$(11))
+    Do While InStr(t, Chr$(11) & Chr$(11)) > 0
+        t = Replace(t, Chr$(11) & Chr$(11), Chr$(11))
+    Loop
+    Do While Left$(t, 1) = Chr$(11)
+        t = Mid$(t, 2)
+    Loop
+    Do While Right$(t, 1) = Chr$(11)
+        t = Left$(t, Len(t) - 1)
+    Loop
+    EnSautsDeLigne = t
+End Function
+
 ' Bloc adresse du correspondant : les lignes de l'adresse sont SERREES
 ' (interligne simple par defaut, [COURRIER] InterligneDestinataire), sans
 ' espacement avant/apres, tout le bloc en gras. L'interligne du corps
 ' (1,15) aere trop un bloc de 3 ou 4 lignes courtes.
+' Appele APRES chaque etape qui peut remettre en forme les paragraphes.
 Public Sub MettreEnFormeDestinataire(ByVal doc As Document)
     On Error Resume Next
     Dim rng As Range, p As Paragraph, interligne As Double
     If Not doc.Bookmarks.Exists("DESTINATAIRE") Then Exit Sub
     interligne = modConfig.ConfigNum("COURRIER", "InterligneDestinataire", 1)
     Set rng = doc.Bookmarks("DESTINATAIRE").Range
+    ' le signet peut ne couvrir qu'une partie du bloc : on l'etend aux
+    ' paragraphes entiers, sinon seules les premieres lignes sont reglees
+    If rng.Paragraphs.Count > 0 Then
+        rng.SetRange rng.Paragraphs(1).Range.Start, _
+                     rng.Paragraphs(rng.Paragraphs.Count).Range.End
+    End If
     rng.Font.Bold = True
     For Each p In rng.Paragraphs
         With p.Format
@@ -245,6 +276,33 @@ Public Sub MettreEnFormeDestinataire(ByVal doc As Document)
         End With
     Next p
     If Err.Number <> 0 Then modLog.LogErreur "MettreEnFormeDestinataire : " & Err.Description
+End Sub
+
+' Depannage : resserrer le bloc adresse d'un courrier DEJA ouvert.
+' Sans signet DESTINATAIRE, agit sur les paragraphes selectionnes.
+Public Sub ResserrerDestinataire()
+    On Error GoTo Erreur
+    Dim doc As Document, p As Paragraph
+    Set doc = ActiveDocument
+    If doc.Bookmarks.Exists("DESTINATAIRE") Then
+        MettreEnFormeDestinataire doc
+    ElseIf Selection.Type <> wdSelectionIP Then
+        For Each p In Selection.Range.Paragraphs
+            With p.Format
+                .SpaceBeforeAuto = False
+                .SpaceAfterAuto = False
+                .SpaceBefore = 0
+                .SpaceAfter = 0
+                .LineSpacingRule = wdLineSpaceSingle
+            End With
+        Next p
+        Selection.Range.Font.Bold = True
+    Else
+        MsgBox "Selectionnez les lignes de l'adresse, puis relancez.", vbInformation, "Cabinet"
+    End If
+    Exit Sub
+Erreur:
+    MsgBox "Erreur : " & Err.Description, vbCritical, "Cabinet"
 End Sub
 
 ' Espacement d'usage des courriers (config [COURRIER] : EspaceAvantPt,
