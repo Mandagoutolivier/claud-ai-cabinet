@@ -72,3 +72,72 @@ je la fais hospitaliser*
 je l adresse pour hospitalisation*
 je le dirige vers*pour hospitalisation*
 je la dirige vers*pour hospitalisation*
+# --- Formules relevees dans les courriers du cabinet (analyse de 1 525 courriers, sept. 2026) ---
+je complete*par*
+nous completerons*par*
+nous completons*par*
+completer par*
+de completer par*
+completer le bilan par*
+completer ce bilan par*
+je fais completer*
+me fait completer le bilan par*
+incite a completer*
+incite*par un*
+incite a faire renouveler*
+incitent a faire realiser*
+poursuivre par*
+nous poursuivrons*par*
+nous tacherons de*
+il realisera*
+elle realisera une*
+va realiser*
+va faire realiser*
+faire realiser*
+lui demande de realiser*
+je lui fais realiser*
+je fais realiser*
+je fais controler*
+je fais reevaluer*
+nous allons controler en*
+il renouvellera*
+je renouvelle l*
+je renouvelle cet examen*
+je renouvelle*par*
+sous reserve de renouveler*
+je lui represcris*
+je le reconvoque pour*
+je la reconvoque pour*
+montrer a un*
+montrer a une*
+de le montrer a*
+de la montrer a*
+utile de le diriger vers*
+utile de la diriger vers*
+le soin de*diriger*
+laisse le soin de l'adresser*
+laisse le soin de prescrire*
+laisserai le soin*hospitalis*
+laisserai le soin*explorer*
+je te laisse le soin de*aupres d*
+je te propose*de completer*par*
+je te propose de renouveler*
+je te propose*diriger vers*
+je vous propose de completer*
+je vous propose*adresser*
+je lui propose de realiser*
+je lui propose*de contacter*
+je lui recommande de realiser*
+je lui recommande de renouveler*
+il conviendra de renouveler*
+il conviendra de realiser*
+il conviendra de*renouveler*
+il convient*de realiser*
+il sera*utile de*
+il serait*utile de*
+serait souhaitable*
+prendre un avis*
+un avis*sera*
+il faudra*aupres d*
+je l'hospitalise*
+je fais hospitaliser*

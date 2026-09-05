@@ -11,3 +11,54 @@ j'envisagerais*
 pourrait etre realise*
 pourrait realiser*
 serait realise*
+# --- Relevees dans les courriers du cabinet (examen deja fait, resultat, conditionnel) ---
+il a realise*
+elle a realise*
+a realise un*
+a realise une*
+a realise le*
+a realise la*
+a realise en*
+a realise des*
+vient de realiser*
+nous avons realise*
+avions realise*
+a fait realiser*
+ai fait completer*
+a complete son bilan*
+a ete complete par*
+a beneficie d*
+nous disposons d*
+nous avions elimine*
+je ne renouvelle pas*
+je n'envisage pas*
+a ete hospitalise*
+lors de l'hospitalisation*
+lors de son hospitalisation*
+lors de la derniere hospitalisation*
+durant l'hospitalisation*
+la derniere scintigraphie*
+sachant que la derniere*
+avec sa derniere*
+precedent test d'effort*
+test d'effort precedent*
+pour comparaison
+pour memoire*
+remonte a*
+revelait*
+s'il est*nous completerons*
+s'il existe*nous completerons*
+sinon nous completerons*
+soit on observe*
+si cela persiste*
+avant de realiser une*
+je prevois de le revoir*
+je prevois de la revoir*
+je te tiens informe des resultats*
+# resultat d'un examen deja fait, decrit dans la phrase
+qui decrit*
+qui retrouve*
+qui montre*
+qui objective*
+qui met en evidence*
+qui confirme*

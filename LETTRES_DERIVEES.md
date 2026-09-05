@@ -366,3 +366,63 @@ Sur tous les courriers, le bloc adresse du correspondant est un seul
 paragraphe à sauts de ligne manuels, à l'interligne du corps
 (`[COURRIER] Interligne`), sans espacement entre les lignes, entièrement en
 gras (`modCourrier.MettreEnFormeDestinataire`).
+
+## 7. Calibrage sur le corpus du cabinet (05/09/2026)
+
+Analyse de 1 637 courriers anonymisés fournis par le médecin (dossier
+`Exemples/`) : 1 525 courriers de consultation et 108 lettres de demande
+écrites sans IA.
+
+### Repérage des demandes
+
+| Dictionnaires | Courriers de consultation où une demande est reconnue |
+|---------------|------------------------------------------------------|
+| hérités de R12 | 234 sur 1 525 |
+| calibrés sur le corpus | 352 sur 1 525 |
+
+Les formules réelles du médecin ont été ajoutées à `declencheurs.txt` après
+vérification de chacune sur tout le corpus (précision estimée sur les
+phrases correspondantes) : « je complète ... par ... » (137 phrases),
+« lui demande de réaliser ... » (63), « nous compléterons ... par ... » (44),
+« montrer à un ... », « nous tâcherons de ... », « il réalisera ... »,
+« je renouvelle l'... », « je te propose ... de compléter ... par ... »,
+« il serait utile de ... », « laisse le soin de l'adresser ... », etc. Les
+formules trop larges (« je te propose* », « je fais* », « nous réaliserons* »,
+« sera réalisé* ») ont été restreintes ou écartées. `exclusions.txt` couvre
+les examens déjà faits (« a réalisé un* », « nous disposons d* », « qui
+retrouve* »), les hospitalisations passées et les demandes conditionnelles
+(« s'il est ... nous compléterons* », « soit on observe* »).
+
+`examens.txt` : l'entrée générique « irm » (qui envoyait IRM cérébrale et
+IRM des surrénales vers IRM_CARDIAQUE) et « hospitalisation » seule ont été
+retirées ; ajout des formes réelles « échodoppler des vaisseaux du cou et
+des membres inférieurs » (47 demandes), des expressions de recherche de SAOS
+(« faire la part d'un syndrome d'apnée du sommeil »), de l'avis génétique,
+de l'IRM cérébrale, des artères rénales.
+
+### Canevas
+
+Vingt-et-un profils ont été réécrits d'après les lettres réelles. Constats
+communs à tous les types :
+
+- première phrase « Merci de réaliser [examen] à [patient], [terrain ou
+  antécédent en apposition / « qui présente ... »] » ; le médecin n'écrit
+  jamais de motif abstrait ;
+- une phrase par ligne ; lettres de 1 à 3 lignes pour les échodopplers et le
+  score calcique, 4 à 7 pour la scintigraphie et le coroscanner, 3 à 6 pour
+  une prise en charge au CCN ;
+- examen clinique et ECG fusionnés (« L'examen et l'électrocardiogramme sont
+  normaux hormis ... »), traitement en majuscules sans virgules, consigne
+  d'arrêt du bêtabloquant 48 heures avant ;
+- **dernière ligne = la demande précise** (« Merci de confirmer l'absence de
+  coronaropathie. », « Merci de vérifier l'absence d'évolutivité. », « Merci
+  de faire la part d'un syndrome d'apnée du sommeil. »). Aucune phrase de
+  courtoisie du type « Je te serais reconnaissant » dans les 108 lettres :
+  cette phrase, prévue dans les premiers gabarits, n'est plus produite
+  quand le profil fournit un objectif ;
+- pour une hospitalisation le médecin écrit « Merci de prendre en charge
+  [rapidement | comme prévu] ... », jamais le mot « hospitalisation ».
+
+Le classeur des correspondants doit encore recevoir des lignes
+`HOSPITALISATION_CCN`, `HOSPITALISATION`, `AVIS_NEUROLOGIE`, `AVIS_GENETIQUE`
+et `ECHODOPPLER_ARTERES_RENALES` pour que le destinataire soit pré-rempli.

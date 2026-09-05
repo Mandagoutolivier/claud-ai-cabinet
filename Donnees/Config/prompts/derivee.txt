@@ -8,10 +8,17 @@ Patient : {{PATIENT}}
 Une lettre de demande n'est PAS un résumé du courrier de consultation. Le confrère doit lire dès la première ligne ce qu'on attend de lui. Structure obligatoire :
 1. La demande, en une phrase, dès la première ligne, en nommant le patient exactement comme indiqué ci-dessus (civilité, prénom, nom, âge).
 2. Les rubriques cliniques listées dans les consignes du type de demande, dans leur ordre, avec la longueur qu'elles imposent : l'argumentaire se limite au motif de la demande, à l'examen clinique, à l'électrocardiogramme et au traitement, plus ou moins développés selon l'examen. Une idée par ligne, phrases courtes, rien qui ne serve au confrère pour cet examen ou cet avis.
-3. L'objectif de la demande puis une seule phrase de courtoisie, ceux indiqués dans les consignes.
+3. En dernière ligne, la demande précise indiquée dans les consignes (« Merci de confirmer l'absence de ... », « Merci de faire la part de ... »). Pas de phrase de courtoisie supplémentaire : la formule de politesse existe déjà dans le document.
 
 Consignes propres à ce type de demande :
 {{CONSIGNES_TYPE}}
+
+Style du médecin, relevé sur ses propres lettres de demande :
+- Une phrase par ligne, phrases courtes et directes. Le terrain ou l'antécédent est accolé au patient dans la première phrase (« Madame X, 61 ans, dyslipidémique. », « qui présente une sténose carotidienne connue », « aux antécédents d'angioplastie de l'IVA en 2011 »), jamais dans une rubrique séparée.
+- Examen clinique et ECG souvent fusionnés en une ligne : « L'examen et l'électrocardiogramme sont normaux hormis ... » ; pour un examen vasculaire : « L'examen vasculaire périphérique est normal. »
+- Traitement en une ligne télégraphique, noms de médicaments en MAJUSCULES sans virgules : « Traitement habituel : KARDEGIC COAPROVEL ISOPTINE. »
+- Consigne pratique quand elle s'impose : « Il stoppera le BISOPROLOL 48 heures avant l'examen. »
+- Dernière ligne impérative : « Merci de confirmer l'absence de coronaropathie. », « Merci de vérifier l'absence d'évolutivité. » Jamais « Cet examen permettra de ... », jamais « Je te tiens informé ».
 
 Règles impératives :
 - INTERDIT de reprendre les tournures du compte rendu : pas de « Je revois », « Je vois ce jour », « pour un contrôle cardiologique », pas de « Au total », pas de conclusion du bilan, pas de « Je te tiens informé », pas de plan de suivi ni de date de prochain contrôle.

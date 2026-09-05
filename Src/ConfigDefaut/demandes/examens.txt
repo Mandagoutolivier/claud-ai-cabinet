@@ -28,12 +28,9 @@ scanner renal|SCANNER_RENAL
 scanner des reins|SCANNER_RENAL
 scanner surrenalien|SCANNER_SURRENALIEN
 scanner des surrenales|SCANNER_SURRENALIEN
-angioscanner|AUTRE_EXAMEN
-scanner|AUTRE_EXAMEN
 irm cardiaque de stress|IRM_DE_STRESS
 irm de stress|IRM_DE_STRESS
 irm cardiaque|IRM_CARDIAQUE
-irm|IRM_CARDIAQUE
 coronarographie|CORONAROGRAPHIE
 echo-doppler veineux|ECHODOPPLER_VEINEUX
 echodoppler veineux|ECHODOPPLER_VEINEUX
@@ -47,7 +44,6 @@ echo-doppler arteriel|ECHODOPPLER_ARTERIEL_MEMBRES_INFERIEURS
 echodoppler arteriel|ECHODOPPLER_ARTERIEL_MEMBRES_INFERIEURS
 echo-doppler des troncs supra-aortiques|ECHODOPPLER_TSA
 echodoppler des troncs supra-aortiques|ECHODOPPLER_TSA
-troncs supra-aortiques|ECHODOPPLER_TSA
 doppler des vaisseaux du cou|ECHODOPPLER_TSA
 echo-doppler des membres inferieurs|ECHODOPPLER_MEMBRES_INFERIEURS
 echodoppler des membres inferieurs|ECHODOPPLER_MEMBRES_INFERIEURS
@@ -73,13 +69,78 @@ polygraphie nocturne|RECHERCHE_SAOS
 polygraphie|RECHERCHE_SAOS
 recherche de syndrome d'apnees du sommeil|RECHERCHE_SAOS
 recherche de saos|RECHERCHE_SAOS
-apnees du sommeil|RECHERCHE_SAOS
 hospitalisation au ccn|HOSPITALISATION_CCN
 hospitalisation ccn|HOSPITALISATION_CCN
 admission au ccn|HOSPITALISATION_CCN
 hospitalisation dans un autre centre|HOSPITALISATION_AUTRE_CENTRE
 hospitalisation dans votre centre|HOSPITALISATION_AUTRE_CENTRE
-hospitalisation|HOSPITALISATION_AUTRE_CENTRE
-hospitaliser|HOSPITALISATION_AUTRE_CENTRE
-hospitalise|HOSPITALISATION_AUTRE_CENTRE
 admission hospitaliere|HOSPITALISATION_AUTRE_CENTRE
+# --- Expressions relevees dans les courriers du cabinet ---
+irm myocardique|IRM_CARDIAQUE
+irm cerebrale|IRM_CEREBRALE
+irm encephalique|IRM_CEREBRALE
+scintigraphie osseuse|AUTRE_EXAMEN
+echo doppler des vaisseaux du cou et des membres inferieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echodoppler des vaisseaux du cou et des membres inferieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+doppler des vaisseaux du cou et des membres inferieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echodoppler des troncs supra-aortiques et des membres inferieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echo doppler des troncs supra-aortiques et des membres inferieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echodoppler des vaisseaux du cou et des membres superieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_SUPERIEURS
+echodoppler des troncs supra-aortiques et des membres superieurs|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_SUPERIEURS
+echo doppler des vaisseaux du cou|ECHODOPPLER_TSA
+echodoppler des vaisseaux du cou|ECHODOPPLER_TSA
+echodoppler des carotides|ECHODOPPLER_TSA
+doppler carotidien|ECHODOPPLER_TSA
+echodoppler des arteres renales|ECHODOPPLER_ARTERES_RENALES
+doppler des arteres renales|ECHODOPPLER_ARTERES_RENALES
+echodoppler renal|ECHODOPPLER_ARTERES_RENALES
+echodoppler des reins|ECHODOPPLER_ARTERES_RENALES
+echodoppler|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echo doppler|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echo-doppler|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+doppler|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+angioscanner cardiaque|COROSCANNER
+angioscanner de l'aorte|ANGIOSCANNER_AORTE_MEMBRES_INFERIEURS
+angioscanner arteriel de l'aorte|ANGIOSCANNER_AORTE_MEMBRES_INFERIEURS
+angioscanner arteriel des membres inferieurs|ANGIOSCANNER_AORTE_MEMBRES_INFERIEURS
+angioscanner|AUTRE_EXAMEN
+scanner|AUTRE_EXAMEN
+hospitalise au ccn|HOSPITALISATION_CCN
+prise en charge au ccn|HOSPITALISATION_CCN
+une hospitalisation|HOSPITALISATION_AUTRE_CENTRE
+son hospitalisation|HOSPITALISATION_AUTRE_CENTRE
+hospitalisation programmee|HOSPITALISATION_AUTRE_CENTRE
+hospitalisation en urgence|HOSPITALISATION_AUTRE_CENTRE
+faire hospitaliser|HOSPITALISATION_AUTRE_CENTRE
+l'hospitaliser|HOSPITALISATION_AUTRE_CENTRE
+analyse genetique|AVIS_GENETIQUE
+enquete familiale|AVIS_GENETIQUE
+service de genetique|AVIS_GENETIQUE
+geneticien|AVIS_GENETIQUE
+plan genetique|AVIS_GENETIQUE
+diabetologue|AVIS_SPECIALISE
+endocrinologue|AVIS_SPECIALISE
+dermatologue|AVIS_SPECIALISE
+orl|AVIS_SPECIALISE
+fibroscopie|AVIS_GASTROENTEROLOGIQUE
+coloscopie|AVIS_GASTROENTEROLOGIQUE
+
+# SAOS : seulement les formes qui expriment une recherche (le SAOS connu est un simple contexte)
+part d'un syndrome d'apnee|RECHERCHE_SAOS
+part d'un saos|RECHERCHE_SAOS
+absence de syndrome d'apnee|RECHERCHE_SAOS
+absence de saos|RECHERCHE_SAOS
+recherche de syndrome d'apnee|RECHERCHE_SAOS
+recherche d'un syndrome d'apnee|RECHERCHE_SAOS
+recherche d'un saos|RECHERCHE_SAOS
+recherche de saos|RECHERCHE_SAOS
+depistage d'un syndrome d'apnee|RECHERCHE_SAOS
+depistage du syndrome d'apnee|RECHERCHE_SAOS
+explorer un syndrome d'apnee|RECHERCHE_SAOS
+exploration du sommeil|RECHERCHE_SAOS
+hospitaliser au ccn|HOSPITALISATION_CCN
+hospitalisation au centre cardiologique du nord|HOSPITALISATION_CCN
+hospitaliser au centre cardiologique du nord|HOSPITALISATION_CCN
+prise en charge au centre cardiologique du nord|HOSPITALISATION_CCN
+fais hospitaliser|HOSPITALISATION_AUTRE_CENTRE
+hospitaliser|HOSPITALISATION_AUTRE_CENTRE

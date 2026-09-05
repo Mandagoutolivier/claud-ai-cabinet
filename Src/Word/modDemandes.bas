@@ -375,24 +375,41 @@ Public Function ConsignesProfil(ByVal p As Object, ByVal modalite As String, ByV
     Dim s As String, premier As String, ordre() As String, i As Long, r As String
     Dim oblig As String, siPresent As String, optionnel As String, interdit As String
     Dim prefixe As String, selection As String, statut As String, longueur As String, objectif As String
-    Dim tv As String
+    Dim tv As String, txtMod As String, examen As String, variantes As String, exemples As String
 
     tv = IIf(tutoiement, "te", "vous")
-    ' 1. premier paragraphe impose
+    examen = ValeurProfil(p, "IDENTITE", "ARTICLE") & " " & ValeurProfil(p, "IDENTITE", "LIBELLE")
+    txtMod = TexteModalite(p, modalite)
+    ' 1. premier paragraphe impose (modele du profil, ou modalite qui le remplace)
     premier = ValeurProfil(p, "PREMIER_PARAGRAPHE", "MODELE", "Merci de réaliser {ARTICLE_EXAMEN} à {PATIENT}{AGE_SEGMENT}, {MOTIF}.")
-    premier = Replace(premier, "{ARTICLE_EXAMEN}", TexteExamen(p, modalite), , , vbTextCompare)
-    premier = Replace(premier, "{EXAMEN}", TexteExamen(p, modalite), , , vbTextCompare)
+    If Len(txtMod) > 0 And LCase$(Left$(Trim$(txtMod), 5)) = "merci" Then
+        premier = txtMod                                   ' la modalite est une premiere phrase complete
+    ElseIf InStr(1, premier, "{MODALITE}", vbTextCompare) > 0 Or InStr(1, premier, "{DEGRE_URGENCE}", vbTextCompare) > 0 Then
+        premier = Replace(premier, "{MODALITE}", txtMod, , , vbTextCompare)
+        premier = Replace(premier, "{DEGRE_URGENCE}", txtMod, , , vbTextCompare)
+    ElseIf Len(txtMod) > 0 Then
+        examen = txtMod                                    ' la modalite remplace l'examen
+    End If
+    premier = Replace(premier, "{ARTICLE_EXAMEN}", examen, , , vbTextCompare)
+    premier = Replace(premier, "{EXAMEN}", examen, , , vbTextCompare)
     premier = Replace(premier, "{PATIENT}{AGE_SEGMENT}", identitePatient, , , vbTextCompare)
     premier = Replace(premier, "{PATIENT}", identitePatient, , , vbTextCompare)
     premier = Replace(premier, "{AGE_SEGMENT}", "", , , vbTextCompare)
     If Len(Trim$(motif)) > 0 Then
         premier = Replace(premier, "{MOTIF}", Trim$(motif), , , vbTextCompare)
+    ElseIf Len(ValeurProfil(p, "MOTIF", "DEFAUT")) > 0 Then
+        premier = Replace(premier, "{MOTIF}", ValeurProfil(p, "MOTIF", "DEFAUT"), , , vbTextCompare)
     Else
         premier = Replace(premier, ", {MOTIF}", "", , , vbTextCompare)
-        premier = Replace(premier, "{MOTIF}", ValeurProfil(p, "MOTIF", "DEFAUT", ""), , , vbTextCompare)
+        premier = Replace(premier, " {MOTIF}", "", , , vbTextCompare)
+        premier = Replace(premier, "{MOTIF}", "", , , vbTextCompare)
     End If
-    s = "Première phrase, à reprendre telle quelle (complète le motif s'il manque, d'après la phrase de prescription) : " & vbLf & premier & vbLf & vbLf
-
+    s = "Première phrase, à reprendre telle quelle : " & vbLf & premier & vbLf
+    s = s & "Dans cette phrase, le motif ou le terrain se rattache directement au patient, en apposition (« hypertendu, dyslipidémique ») ou par une relative (« qui présente ... », « aux antécédents de ... »), d'après la phrase de prescription et le courrier ; les champs restants entre accolades sont à remplir ainsi : {TERRAIN} = terrain ou antécédent majeur en apposition suivi d'une virgule, vide sinon ; {PRONOM_OBJET} = le / la / l' selon le patient ; {SPECIALITE} = la spécialité demandée ; {VALEUR} = la valeur citée dans le courrier. Ne jamais laisser d'accolade dans la lettre." & vbLf
+    exemples = ValeurProfil(p, "MOTIF", "EXEMPLES")
+    If Len(exemples) = 0 Then exemples = ValeurProfil(p, "MOTIF", "FORMES")
+    If Len(exemples) > 0 Then s = s & "Formes réelles du motif chez ce médecin : " & Replace(exemples, ";", " / ") & vbLf
+    s = s & vbLf
     If Len(phrasesPrescription) > 0 Then
         s = s & "Phrase(s) du courrier de consultation qui formulent cette demande (elles donnent l'examen précis, sa modalité et le motif) :" & vbLf & _
                 phrasesPrescription & vbLf & vbLf
@@ -401,9 +418,9 @@ Public Function ConsignesProfil(ByVal p As Object, ByVal modalite As String, ByV
     ' 2. rubriques du corps
     longueur = UCase$(ValeurProfil(p, "STYLE", "LONGUEUR", "MOYENNE"))
     Select Case longueur
-        Case "COURTE": s = s & "Longueur : COURTE, deux à trois lignes cliniques au total." & vbLf
+        Case "COURTE": s = s & "Longueur : COURTE, une à trois lignes en tout, première phrase comprise ; une seule phrase suffit souvent." & vbLf
         Case "DETAILLEE": s = s & "Longueur : DÉTAILLÉE, jusqu'à " & ValeurProfil(p, "STYLE", "PARAGRAPHES_MAX", "10") & " lignes, une rubrique par ligne." & vbLf
-        Case Else: s = s & "Longueur : MOYENNE, quatre à six lignes cliniques au total." & vbLf
+        Case Else: s = s & "Longueur : MOYENNE, quatre à six lignes en tout, jamais plus de " & ValeurProfil(p, "STYLE", "PARAGRAPHES_MAX", "7") & "." & vbLf
     End Select
     oblig = ";" & UCase$(ValeurProfil(p, "STRUCTURE", "OBLIGATOIRE")) & ";"
     siPresent = ";" & UCase$(ValeurProfil(p, "STRUCTURE", "OBLIGATOIRE_SI_PRESENT")) & ";"
@@ -426,25 +443,46 @@ Public Function ConsignesProfil(ByVal p As Object, ByVal modalite As String, ByV
             prefixe = ValeurProfil(p, "PREFIXES", r)
             selection = ValeurProfil(p, "SELECTION", r)
             s = s & "- " & LibelleRubrique(r) & " : " & statut
-            If Len(prefixe) > 0 Then s = s & " ; commencer par « " & prefixe & " »"
+            If Len(prefixe) > 0 Then s = s & " ; commencer par « " & Replace(prefixe, "|", " » ou « ") & " »"
             If Len(selection) > 0 Then s = s & " ; éléments à chercher : " & Replace(selection, ";", ", ")
+            If Len(ValeurProfil(p, "INSTRUCTIONS", r)) > 0 Then s = s & " ; consigne : " & ValeurProfil(p, "INSTRUCTIONS", r)
             s = s & "." & vbLf
         End If
     Next i
     If Len(interdit) > 0 Then s = s & "Rubriques INTERDITES (ne pas les rédiger) : " & Replace(interdit, ";", ", ") & "." & vbLf
 
-    ' 3. objectif et courtoisie
+    ' 3. derniere phrase : l'objectif du profil (« Merci de confirmer ... ») tient
+    '    lieu de phrase finale ; a defaut une phrase de courtoisie selon la nature
     objectif = ValeurProfil(p, "OBJECTIF", "MODELE")
-    If Len(objectif) > 0 Then s = s & "Avant-dernière phrase (objectif de la demande, à reprendre ou adapter sobrement) : " & objectif & vbLf
-    Select Case UCase$(ValeurProfil(p, "IDENTITE", "NATURE", "EXAMEN"))
-        Case "HOSPITALISATION"
-            s = s & "Dernière phrase : « Je " & tv & " remercie de bien vouloir prendre en charge ce patient » (ou « cette patiente »)."
-        Case "CONSULTATION"
-            s = s & "Dernière phrase : « Je " & tv & " serais reconnaissant de bien vouloir recevoir ce patient » (ou « cette patiente »)."
-        Case Else
-            s = s & "Dernière phrase : « Je " & tv & " serais reconnaissant de bien vouloir réaliser cet examen »."
-    End Select
+    variantes = ValeurProfil(p, "OBJECTIF", "VARIANTES")
+    If Len(objectif) > 0 Then
+        s = s & "Dernière phrase (la demande précise, à reprendre ou adapter sobrement au contexte) : " & objectif
+        If Len(variantes) > 0 Then s = s & " ; variantes selon le contexte : " & Replace(variantes, ";", " / ")
+        If Len(ValeurProfil(p, "INSTRUCTIONS", "OBJECTIF")) > 0 Then s = s & " ; consigne : " & ValeurProfil(p, "INSTRUCTIONS", "OBJECTIF")
+        s = s & vbLf & "Aucune autre phrase de courtoisie (pas de « Je te serais reconnaissant », pas de « et de m'adresser le compte rendu ») : la formule de politesse existe déjà dans le document."
+    Else
+        Select Case UCase$(ValeurProfil(p, "IDENTITE", "NATURE", "EXAMEN"))
+            Case "HOSPITALISATION"
+                s = s & "Dernière phrase : « Merci de le prendre en charge » (ou « la »)."
+            Case "CONSULTATION"
+                s = s & "Dernière phrase : « Merci de l'évaluer » ou la question précise posée au confrère."
+            Case Else
+                s = s & "Dernière phrase : « Je " & tv & " serais reconnaissant de bien vouloir réaliser cet examen »."
+        End Select
+    End If
     ConsignesProfil = s
+End Function
+
+' Texte de la modalite choisie ("" si aucune)
+Private Function TexteModalite(ByVal p As Object, ByVal modalite As String) As String
+    Dim m As Variant
+    If Len(modalite) = 0 Then Exit Function
+    For Each m In ModalitesProfil(p)
+        If StrComp(m("Libelle"), modalite, vbTextCompare) = 0 Then
+            TexteModalite = m("Texte")
+            Exit Function
+        End If
+    Next m
 End Function
 
 Private Function LibelleRubrique(ByVal r As String) As String

@@ -532,26 +532,30 @@ Public Sub Test_DERIVEES(Optional ByVal racine As String = "")
     modLog.Verifier "profil TEST_EFFORT charge", modDemandes.ValeurProfil(p, "IDENTITE", "LIBELLE") = "test d'effort"
     modLog.Verifier "profil : ordre des rubriques", InStr(modDemandes.ValeurProfil(p, "STRUCTURE", "ORDRE"), "ECG") > 0
     Set p = modDemandes.ChargerProfil("SCINTIGRAPHIE_MYOCARDIQUE")
-    modLog.Verifier "profil scinti : 4 modalites", modDemandes.ModalitesProfil(p).Count = 4
-    modLog.Verifier "texte de modalite", InStr(modDemandes.TexteExamen(p, "de repos"), "de repos") > 0
+    modLog.Verifier "profil scinti : 5 modalites", modDemandes.ModalitesProfil(p).Count = 5
+    modLog.Verifier "texte de modalite", InStr(modDemandes.TexteExamen(p, "sous RAPISCAN"), "RAPISCAN") > 0
     Set p = modDemandes.ChargerProfil("CODE_INCONNU_XYZ")
     modLog.Verifier "profil inconnu -> AUTRE_EXAMEN", modDemandes.ValeurProfil(p, "IDENTITE", "CODE") = "AUTRE_EXAMEN"
-    modLog.Verifier "liste des profils", modDemandes.ListerProfils().Count >= 30
+    modLog.Verifier "liste des profils", modDemandes.ListerProfils().Count >= 35
 
     ' --- prompt : demande en tete, registre, pas de resume ---
     Set p = modDemandes.ChargerProfil("TEST_EFFORT")
     prompt = modDerivees.ConstruirePrompt(p, "", True, "Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans", "", "Je prescris un test d'effort.")
-    modLog.Verifier "prompt : premiere phrase = demande", InStr(prompt, "Merci de réaliser un test d'effort à Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans") > 0
+    modLog.Verifier "prompt : premiere phrase = demande", InStr(prompt, "Merci de réaliser un test d'effort à Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans, ayant des facteurs de risque cardiovasculaire") > 0
     modLog.Verifier "prompt : tutoiement", InStr(prompt, "Je te serais reconnaissant") > 0
-    modLog.Verifier "prompt : rubrique ECG avec prefixe", InStr(prompt, "Électrocardiogramme") > 0 And InStr(prompt, "L'électrocardiogramme montre") > 0
+    modLog.Verifier "prompt : rubrique ECG avec prefixe", InStr(prompt, "Électrocardiogramme") > 0 And InStr(prompt, "Sur le tracé en") > 0
+    modLog.Verifier "prompt : derniere phrase = objectif du profil", InStr(prompt, "Merci de confirmer l'absence de coronaropathie.") > 0 And InStr(prompt, "Je te serais reconnaissant") = 0
     modLog.Verifier "prompt : phrase de prescription", InStr(prompt, "Je prescris un test d'effort.") > 0
     modLog.Verifier "prompt : interdit 'Je revois'", InStr(prompt, "Je revois") > 0 And InStr(prompt, "Au total") > 0
     modLog.Verifier "prompt : sans courriers de reference", InStr(prompt, "Courrier de référence") = 0 And InStr(prompt, "[COURRIERS_DE_REFERENCE]") = 0
     modLog.Verifier "prompt : sans marqueur restant", InStr(prompt, "{{CONSIGNES_TYPE}}") = 0 And InStr(prompt, "{{MOTIF}}") = 0 And InStr(prompt, "{ARTICLE_EXAMEN}") = 0
     Set p = modDemandes.ChargerProfil("HOSPITALISATION_CCN")
-    prompt = modDerivees.ConstruirePrompt(p, "en urgence", False, "Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans", "", "")
-    modLog.Verifier "prompt hosp : vouvoiement", InStr(prompt, "Je vous remercie de bien vouloir prendre en charge") > 0
-    modLog.Verifier "prompt hosp : modalite", InStr(prompt, "en urgence au CCN") > 0
+    prompt = modDerivees.ConstruirePrompt(p, "rapidement", False, "Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans", "", "")
+    modLog.Verifier "prompt hosp : degre d'urgence insere", InStr(prompt, "Merci de prendre en charge rapidement Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans") > 0
+    modLog.Verifier "prompt hosp : demande finale", InStr(prompt, "prendre en charge") > 0 And InStr(prompt, "{DEGRE_URGENCE}") = 0
+    Set p = modDemandes.ChargerProfil("SCORE_CALCIQUE")
+    prompt = modDerivees.ConstruirePrompt(p, "Contrôle", True, "Madame {{PAT_PRENOM}} {{PAT_NOM}}, 65 ans", "", "")
+    modLog.Verifier "modalite = phrase complete", InStr(prompt, "Merci de réévaluer le score calcique de Madame") > 0
 
     ' --- registre et formules par defaut ---
     Set cor = CreateObject("Scripting.Dictionary"): cor.CompareMode = 1
