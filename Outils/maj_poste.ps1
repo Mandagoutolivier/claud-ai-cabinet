@@ -18,6 +18,10 @@ param(
     [string]$Branche  = 'claude/suivi-dev-logiciel-cabinet-fdjpa9',
     [string]$Racine   = 'C:\CabinetCardio',
     [ValidateSet('Auto', 'Medecin', 'Secretaire')][string]$Role = 'Auto',
+    # Base patients d'amorcage, utilisee UNIQUEMENT si la racine n'en a pas
+    # encore. Les bases nominatives ne sont pas dans GitHub : elles viennent
+    # du paquet d'installation du NAS ou du poste secretariat.
+    [string]$BaseInitiale = '\\DS224\home\claude\install\Donnees\Base\Patients.xlsx',
     [switch]$SansConstruction     # reutilise les modeles deja construits
 )
 $ErrorActionPreference = 'Stop'
@@ -124,6 +128,16 @@ if (-not (Test-Path $installeur)) { throw "installer_cabinet.ps1 introuvable : $
 
 $racineDistante = $Racine.StartsWith('\\')
 if ($Role -eq 'Auto') { $Role = if ($racineDistante) { 'Medecin' } else { 'Secretaire' } }
+
+$basePoste = Join-Path $Racine 'Base\Patients.xlsx'
+if (-not $racineDistante -and -not (Test-Path $basePoste) -and (Test-Path $BaseInitiale)) {
+    Etape 'Base patients initiale'
+    New-Item -ItemType Directory -Force -Path (Split-Path $basePoste -Parent) | Out-Null
+    Copy-Item $BaseInitiale $basePoste
+    $src = Get-Item $BaseInitiale
+    Ok "base copiee depuis $BaseInitiale ($([math]::Round($src.Length/1KB)) Ko, du $($src.LastWriteTime))"
+    Info 'ATTENTION : cette copie est une PHOTO. Ce que vous saisirez ici ne remontera pas au cabinet.'
+}
 
 if (-not $racineDistante -and -not (Test-Path (Join-Path $Racine 'Base'))) {
     # poste autonome (domicile) : on cree d abord la racine locale et ses bases
