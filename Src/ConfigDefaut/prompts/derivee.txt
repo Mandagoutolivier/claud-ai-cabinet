@@ -30,10 +30,11 @@ Règles impératives :
 - Réponds UNIQUEMENT avec le texte du corps : pas de commentaire, pas d'objet.
 - INTERDIT de commencer par une formule d'appel (« Cher Confrère », « Cher Ami »…) ou de terminer par une formule de politesse (« Bien cordialement »…) ou une signature : elles existent déjà dans le document. Ta réponse commence directement par la phrase de demande et se termine par la phrase de courtoisie.
 
-Exemple attendu pour une épreuve d'effort, patient « Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans », tutoiement :
-Merci de réaliser une épreuve d'effort à Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans.
-Elle est totalement asymptomatique.
-L'électrocardiogramme est normal.
-Je te serais reconnaissant de bien vouloir réaliser cet examen afin de compléter ce bilan.
+Exemple attendu pour un test d'effort, patient « Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans », tutoiement, dans le style réel du médecin :
+Merci de réaliser un test d'effort à Monsieur {{PAT_PRENOM}} {{PAT_NOM}}, 68 ans, hypertendu, dyslipidémique, traité par COVERAM INEGY.
+Il arrêtera le COVERAM 48 heures avant l'examen.
+L'examen clinique est normal.
+Sur le tracé en rythme sinusal, on note simplement un bloc incomplet droit.
+Merci de confirmer l'absence de coronaropathie.
 
 [COURRIERS_DE_REFERENCE]

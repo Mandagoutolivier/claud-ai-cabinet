@@ -426,3 +426,28 @@ communs à tous les types :
 Le classeur des correspondants doit encore recevoir des lignes
 `HOSPITALISATION_CCN`, `HOSPITALISATION`, `AVIS_NEUROLOGIE`, `AVIS_GENETIQUE`
 et `ECHODOPPLER_ARTERES_RENALES` pour que le destinataire soit pré-rempli.
+
+### Style des courriers aux généralistes
+
+Six analyses indépendantes de 90 courriers de consultation ont été
+consolidées en un guide de style intégré au prompt de correction
+(`Config/prompts/correction.txt`) : ouverture « Je revois Monsieur X. Y.,
+NN ans, ... », symptômes en phrases courtes, traitement en majuscules sans
+virgule, bloc d'examen clinique figé sur une ligne, électrocardiogramme en
+une phrase (« à 70 /min avec un PR à 0,16 s »), « Au total : » suivi de
+fragments nominaux, conduite à tenir et suivi dans les formules du médecin,
+« Merci de ta confiance. » ou « Merci de votre confiance. ». Les trois
+courriers de référence de `Config/style` sont désormais trois lettres réelles
+anonymisées : un suivi simple en vouvoiement, un patient complexe en
+tutoiement, une première consultation avec demande d'examen.
+
+### Revue critique des canevas
+
+Une relecture adversariale des canevas proposés a conduit à : vider tous les
+motifs par défaut à contenu clinique (une lettre automatique ne doit jamais
+affirmer un terrain absent du courrier ; `{MOTIF}` est rempli par l'API
+d'après la phrase de prescription, ou supprimé), retirer les rubriques qui
+doublonnaient la dernière phrase ou la première, insérer un espace devant
+la modalité, remplacer les champs inconnus du moteur, corriger `TYPE_BASE`
+(`TESTS_GENETIQUES`, `SAOS`, `ANGIOSCANNER PULMONAIRE`) et documenter les
+clés informatives non lues par le logiciel.

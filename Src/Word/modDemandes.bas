@@ -385,8 +385,8 @@ Public Function ConsignesProfil(ByVal p As Object, ByVal modalite As String, ByV
     If Len(txtMod) > 0 And LCase$(Left$(Trim$(txtMod), 5)) = "merci" Then
         premier = txtMod                                   ' la modalite est une premiere phrase complete
     ElseIf InStr(1, premier, "{MODALITE}", vbTextCompare) > 0 Or InStr(1, premier, "{DEGRE_URGENCE}", vbTextCompare) > 0 Then
-        premier = Replace(premier, "{MODALITE}", txtMod, , , vbTextCompare)
-        premier = Replace(premier, "{DEGRE_URGENCE}", txtMod, , , vbTextCompare)
+        premier = Replace(premier, "{MODALITE}", IIf(Len(txtMod) > 0, " " & txtMod, ""), , , vbTextCompare)
+        premier = Replace(premier, "{DEGRE_URGENCE}", IIf(Len(txtMod) > 0, " " & txtMod, ""), , , vbTextCompare)
     ElseIf Len(txtMod) > 0 Then
         examen = txtMod                                    ' la modalite remplace l'examen
     End If
@@ -399,16 +399,15 @@ Public Function ConsignesProfil(ByVal p As Object, ByVal modalite As String, ByV
         premier = Replace(premier, "{MOTIF}", Trim$(motif), , , vbTextCompare)
     ElseIf Len(ValeurProfil(p, "MOTIF", "DEFAUT")) > 0 Then
         premier = Replace(premier, "{MOTIF}", ValeurProfil(p, "MOTIF", "DEFAUT"), , , vbTextCompare)
-    Else
-        premier = Replace(premier, ", {MOTIF}", "", , , vbTextCompare)
-        premier = Replace(premier, " {MOTIF}", "", , , vbTextCompare)
-        premier = Replace(premier, "{MOTIF}", "", , , vbTextCompare)
     End If
+    ' sans motif saisi ni defaut, {MOTIF} reste dans la phrase : l'API le
+    ' remplit d'apres la phrase de prescription (jamais un defaut clinique)
     s = "Première phrase, à reprendre telle quelle : " & vbLf & premier & vbLf
-    s = s & "Dans cette phrase, le motif ou le terrain se rattache directement au patient, en apposition (« hypertendu, dyslipidémique ») ou par une relative (« qui présente ... », « aux antécédents de ... »), d'après la phrase de prescription et le courrier ; les champs restants entre accolades sont à remplir ainsi : {TERRAIN} = terrain ou antécédent majeur en apposition suivi d'une virgule, vide sinon ; {PRONOM_OBJET} = le / la / l' selon le patient ; {SPECIALITE} = la spécialité demandée ; {VALEUR} = la valeur citée dans le courrier. Ne jamais laisser d'accolade dans la lettre." & vbLf
+    s = s & "Dans cette phrase, le motif ou le terrain se rattache directement au patient, en apposition (« hypertendu, dyslipidémique ») ou par une relative (« qui présente ... », « aux antécédents de ... »), d'après la phrase de prescription et le courrier ; les champs restants entre accolades sont à remplir ainsi : {TERRAIN} = terrain ou antécédent majeur en apposition suivi d'une virgule, vide sinon ; {PRONOM_OBJET} = le / la / l' selon le patient ; {SPECIALITE} = la spécialité demandée ; {VALEUR} = la valeur citée dans le courrier ; {MOTIF} = le terrain, l'antécédent ou le motif tel que la phrase de prescription et le courrier le donnent, sinon rien du tout (supprimer alors la virgule qui précède). Ne jamais laisser d'accolade dans la lettre, ne jamais inventer un motif." & vbLf
     exemples = ValeurProfil(p, "MOTIF", "EXEMPLES")
     If Len(exemples) = 0 Then exemples = ValeurProfil(p, "MOTIF", "FORMES")
     If Len(exemples) > 0 Then s = s & "Formes réelles du motif chez ce médecin : " & Replace(exemples, ";", " / ") & vbLf
+    If Len(ValeurProfil(p, "INSTRUCTIONS", "MOTIF")) > 0 Then s = s & "Consigne pour le motif : " & ValeurProfil(p, "INSTRUCTIONS", "MOTIF") & vbLf
     s = s & vbLf
     If Len(phrasesPrescription) > 0 Then
         s = s & "Phrase(s) du courrier de consultation qui formulent cette demande (elles donnent l'examen précis, sa modalité et le motif) :" & vbLf & _
@@ -454,6 +453,8 @@ Public Function ConsignesProfil(ByVal p As Object, ByVal modalite As String, ByV
     ' 3. derniere phrase : l'objectif du profil (« Merci de confirmer ... ») tient
     '    lieu de phrase finale ; a defaut une phrase de courtoisie selon la nature
     objectif = ValeurProfil(p, "OBJECTIF", "MODELE")
+    objectif = Replace(objectif, "{DEGRE_URGENCE}", IIf(Len(txtMod) > 0, " " & txtMod, ""), , , vbTextCompare)
+    objectif = Replace(objectif, "{MODALITE}", IIf(Len(txtMod) > 0, " " & txtMod, ""), , , vbTextCompare)
     variantes = ValeurProfil(p, "OBJECTIF", "VARIANTES")
     If Len(objectif) > 0 Then
         s = s & "Dernière phrase (la demande précise, à reprendre ou adapter sobrement au contexte) : " & objectif

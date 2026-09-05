@@ -10,9 +10,6 @@ je sollicite*
 je prescris*
 je lui prescris*
 prescription de*
-je complete par*
-je complete le bilan*par*
-je complete ce bilan*par*
 je completerai par*
 il va completer ce bilan par*
 il va completer le bilan par*
@@ -34,14 +31,9 @@ nous programmons*
 je vais programmer*
 nous allons programmer*
 je souhaite realiser*
-je souhaite faire realiser*
-je vais lui faire realiser*
 nous allons realiser*
 sera complete par*
-nous completerons par*
-je l'adresse*pour*
 je l'adresse*
-je l'oriente*pour*
 je l'oriente*
 nous l'orientons*
 je le dirige vers*
@@ -56,43 +48,26 @@ je le confie*
 je la confie*
 nous le confions*
 nous la confions*
-je te laisse le soin de le diriger*
-je vous laisse le soin de le diriger*
-je programme une hospitalisation*
-je programme son hospitalisation*
-nous programmons une hospitalisation*
-je l hospitalise*
-nous allons l hospitaliser*
 une hospitalisation est programmee*
 une admission est programmee*
-je demande son hospitalisation*
-je propose une hospitalisation*
 je le fais hospitaliser*
 je la fais hospitaliser*
-je l adresse pour hospitalisation*
-je le dirige vers*pour hospitalisation*
-je la dirige vers*pour hospitalisation*
 # --- Formules relevees dans les courriers du cabinet (analyse de 1 525 courriers, sept. 2026) ---
 je complete*par*
 nous completerons*par*
 nous completons*par*
 completer par*
-de completer par*
-completer le bilan par*
-completer ce bilan par*
 je fais completer*
 me fait completer le bilan par*
 incite a completer*
 incite*par un*
 incite a faire renouveler*
-incitent a faire realiser*
 poursuivre par*
 nous poursuivrons*par*
 nous tacherons de*
 il realisera*
 elle realisera une*
 va realiser*
-va faire realiser*
 faire realiser*
 lui demande de realiser*
 je lui fais realiser*
@@ -129,7 +104,6 @@ je lui propose de realiser*
 je lui propose*de contacter*
 je lui recommande de realiser*
 je lui recommande de renouveler*
-il conviendra de renouveler*
 il conviendra de realiser*
 il conviendra de*renouveler*
 il convient*de realiser*
@@ -141,3 +115,10 @@ un avis*sera*
 il faudra*aupres d*
 je l'hospitalise*
 je fais hospitaliser*
+
+elle realisera*
+je te laisse le soin d'envisager*
+il faudrait l'adresser*
+il faudrait le diriger vers*
+il faudrait la diriger vers*
+nous allons l'hospitaliser*

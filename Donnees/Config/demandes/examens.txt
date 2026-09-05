@@ -144,3 +144,13 @@ hospitaliser au centre cardiologique du nord|HOSPITALISATION_CCN
 prise en charge au centre cardiologique du nord|HOSPITALISATION_CCN
 fais hospitaliser|HOSPITALISATION_AUTRE_CENTRE
 hospitaliser|HOSPITALISATION_AUTRE_CENTRE
+echodopplers|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+echo-dopplers|ECHODOPPLER_ARTERIEL_TSA_ET_MEMBRES_INFERIEURS
+l'hospitalise|HOSPITALISATION_AUTRE_CENTRE
+angioscanner de l'aorte ascendante|AUTRE_EXAMEN
+angioscanner de l'aorte thoracique|AUTRE_EXAMEN
+angioscanner thoracique|AUTRE_EXAMEN
+angioscanner des reins|ANGIOSCANNER_RENAL_SURRENALIEN
+angioscanner renal|ANGIOSCANNER_RENAL_SURRENALIEN
+irm des surrenales|AUTRE_EXAMEN
+irm surrenalienne|AUTRE_EXAMEN

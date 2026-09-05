@@ -541,7 +541,7 @@ Public Sub Test_DERIVEES(Optional ByVal racine As String = "")
     ' --- prompt : demande en tete, registre, pas de resume ---
     Set p = modDemandes.ChargerProfil("TEST_EFFORT")
     prompt = modDerivees.ConstruirePrompt(p, "", True, "Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans", "", "Je prescris un test d'effort.")
-    modLog.Verifier "prompt : premiere phrase = demande", InStr(prompt, "Merci de réaliser un test d'effort à Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans, ayant des facteurs de risque cardiovasculaire") > 0
+    modLog.Verifier "prompt : premiere phrase = demande", InStr(prompt, "Merci de réaliser un test d'effort à Madame {{PAT_PRENOM}} {{PAT_NOM}}, 75 ans, {MOTIF}") > 0 And InStr(prompt, "ne jamais inventer un motif") > 0
     modLog.Verifier "prompt : tutoiement", InStr(prompt, "Je te serais reconnaissant") > 0
     modLog.Verifier "prompt : rubrique ECG avec prefixe", InStr(prompt, "Électrocardiogramme") > 0 And InStr(prompt, "Sur le tracé en") > 0
     modLog.Verifier "prompt : derniere phrase = objectif du profil", InStr(prompt, "Merci de confirmer l'absence de coronaropathie.") > 0 And InStr(prompt, "Je te serais reconnaissant") = 0
