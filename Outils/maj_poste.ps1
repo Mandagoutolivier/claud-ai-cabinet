@@ -48,6 +48,22 @@ if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
 }
 Ok 'git present'
 
+# Un depot git pose sur un partage reseau appartient a l'utilisateur du NAS,
+# pas a celui de Windows : git refuse alors d'y toucher ("dubious ownership").
+# On declare le dossier comme sur, sous les deux ecritures que git accepte
+# pour un chemin UNC. Operation idempotente et sans effet sur les autres depots.
+function Assurer-SafeDirectory([string]$chemin) {
+    $unc = $chemin -replace '\\', '/'          # \\DS224\... -> //DS224/...
+    $formes = @($chemin, $unc, "%(prefix)/$unc")
+    $deja = @(git config --global --get-all safe.directory 2>$null)
+    foreach ($f in $formes) {
+        if ($deja -notcontains $f) { git config --global --add safe.directory $f | Out-Null }
+    }
+    $global:LASTEXITCODE = 0
+}
+Assurer-SafeDirectory $git
+Ok 'depot du NAS declare comme sur pour git (safe.directory)'
+
 # ------------------------------------------------------------ 1. recuperation GitHub -> NAS
 Etape "Recuperation de la version GitHub (branche $Branche)"
 if (Test-Path (Join-Path $git '.git')) {
