@@ -103,8 +103,8 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
     If Len(politesse) = 0 Then politesse = PolitesseParDefaut(EstTutoye(cor))
 
     RemplirSignet doc, "EXPEDITEUR", expediteur
-    ' l'adresse est UN paragraphe (sauts de ligne manuels) : meme interligne
-    ' que le corps, sans espacement entre les lignes, entierement en gras
+    ' l'adresse est UN paragraphe (sauts de ligne manuels) : lignes serrees
+    ' (interligne simple), sans espacement entre elles, entierement en gras
     RemplirSignet doc, "DESTINATAIRE", Replace(destinataire, vbCr, Chr$(11))
     MettreEnFormeDestinataire doc
     RemplirSignet doc, "DATELIEU", modConfig.Config("GENERAL", "Ville") & ", le " & Format$(Date, "d mmmm yyyy")
@@ -219,12 +219,15 @@ Public Sub PreparerStyleCorps(ByVal doc As Document)
     If Err.Number <> 0 Then modLog.LogErreur "PreparerStyleCorps : " & Err.Description
 End Sub
 
-' Bloc adresse du correspondant : interligne du corps ([COURRIER] Interligne),
-' aucun espacement avant/apres entre les lignes du bloc, tout en gras.
+' Bloc adresse du correspondant : les lignes de l'adresse sont SERREES
+' (interligne simple par defaut, [COURRIER] InterligneDestinataire), sans
+' espacement avant/apres, tout le bloc en gras. L'interligne du corps
+' (1,15) aere trop un bloc de 3 ou 4 lignes courtes.
 Public Sub MettreEnFormeDestinataire(ByVal doc As Document)
     On Error Resume Next
-    Dim rng As Range, p As Paragraph
+    Dim rng As Range, p As Paragraph, interligne As Double
     If Not doc.Bookmarks.Exists("DESTINATAIRE") Then Exit Sub
+    interligne = modConfig.ConfigNum("COURRIER", "InterligneDestinataire", 1)
     Set rng = doc.Bookmarks("DESTINATAIRE").Range
     rng.Font.Bold = True
     For Each p In rng.Paragraphs
@@ -233,8 +236,12 @@ Public Sub MettreEnFormeDestinataire(ByVal doc As Document)
             .SpaceAfterAuto = False
             .SpaceBefore = 0
             .SpaceAfter = 0
-            .LineSpacingRule = wdLineSpaceMultiple
-            .LineSpacing = LinesToPoints(modConfig.ConfigNum("COURRIER", "Interligne", 1.15))
+            If interligne <= 1 Then
+                .LineSpacingRule = wdLineSpaceSingle
+            Else
+                .LineSpacingRule = wdLineSpaceMultiple
+                .LineSpacing = LinesToPoints(interligne)
+            End If
         End With
     Next p
     If Err.Number <> 0 Then modLog.LogErreur "MettreEnFormeDestinataire : " & Err.Description
