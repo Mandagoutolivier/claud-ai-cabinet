@@ -77,6 +77,28 @@ Corrections apportées d'après `Analyse_modele_gestion_cabinet_20260905.md`
 - **Durée par motif** : `[AGENDA] DureeParActe=CS:15;APC:30;…` — la durée
   suit le motif choisi (valeurs par défaut à ajuster).
 
+## 3 ter. Honoraires et encaissements (06/09/2026, `modHonoraires`)
+
+Bouton séparé à l'accueil, feuille « Honoraires ». Lecture du journal ;
+seules écritures : règlement (`EnregistrerReglement`), `RelanceLe`,
+`ChequeRemisLe`. Aucune ligne d'acte n'est créée par ce module.
+
+- **Impayés** : séances non soldées, ancienneté, rouge au-delà de
+  `[HONORAIRES] RelanceApresJours` sans relance, jaune si virement attendu
+  ou tiers payant ; actions règlement / relance / note / fiche.
+- **Note d'honoraires** : n° = séance, actes, montants, « Acquittée le »
+  ou « Reste dû », PDF `Actes\Notes\`.
+- **Chèques** : liste des chèques reçus non remis, bordereau PDF
+  `Actes\Remises\`, marquage « remis le » après confirmation.
+- **Recettes du mois** : encaissements réels sans identité de patient,
+  totaux par mode et par jour, PDF + Excel `Actes\Recettes\` (comptable).
+- **Tableau de bord** : facturé / encaissé / reste dû par mois, par acte.
+
+Limite connue : une même ligne d'acte réglée en deux fois ne garde que la
+date du dernier encaissement (le journal est tenu par ligne d'acte, pas par
+règlement). Un registre des règlements est l'évolution suivante si le
+comptable le demande.
+
 ## 4. Dates et identités
 
 - `modTexte` : `DateFrValide` (calendrier réel, années bissextiles, pas de

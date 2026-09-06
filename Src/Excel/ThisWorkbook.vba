@@ -23,5 +23,8 @@ Private Sub Workbook_SheetBeforeDoubleClick(ByVal Sh As Object, ByVal Target As 
     If Sh.Name = "Agenda" Then
         Cancel = True
         modAgendaVue.ClicCreneau Target
+    ElseIf Sh.Name = "Honoraires" Then
+        Cancel = True
+        modHonoraires.ClicLigne Target
     End If
 End Sub

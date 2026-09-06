@@ -86,6 +86,19 @@ enregistrements. Testez-le vraiment (renommez le dossier `Base` une seconde).
 | 5.2 | Renommer un patient (mariage) puis créer un courrier | le dossier existant est RENOMMÉ, pas dupliqué |
 | 5.3 | Rouvrir un courrier de la veille | la date affichée reste celle de sa création |
 
+## 5 bis. Honoraires et encaissements (bouton séparé de l'accueil)
+
+| # | Ce qu'on fait | Attendu |
+|---|---|---|
+| 5b.1 | Séance enregistrée à 0 reçu, puis « Honoraires et encaissements » | elle apparaît dans « Impayés » avec le reste dû |
+| 5b.2 | Double-clic → « Enregistrer un règlement », montant partiel | reste dû recalculé ; montant complet → la ligne disparaît |
+| 5b.3 | « Marquer relancé » | date dans « Relance le », la ligne n'est plus rouge |
+| 5b.4 | « Note d'honoraires » | aperçu + PDF `Actes\Notes\Note_<séance>.pdf`, mention « Acquittée » si soldée |
+| 5b.5 | Séance payée par chèque → « Chèques à remettre » | présente ; « Bordereau de remise » → PDF puis marquage « remis » sur confirmation |
+| 5b.6 | « Recettes du mois » | PDF + Excel dans `Actes\Recettes\`, sans nom de patient, totaux par mode et par jour |
+| 5b.7 | « Tableau de bord » | facturé / encaissé / reste par mois, et par acte ; les totaux recoupent le journal |
+| 5b.8 | Vérifier qu'aucune de ces actions n'a créé de ligne au journal | seules les colonnes MontantRegle, DateEncaissement, Paye, RelanceLe, ChequeRemisLe bougent |
+
 ## 6. Lettres de demande
 
 `[DERIVEES] AutoValider=0` : les demandes sont produites **en brouillon**.

@@ -44,6 +44,7 @@
       "Excel/modActes.bas",
       "Excel/modJournal.bas",
       "Excel/modCerfaPrint.bas",
+      "Excel/modHonoraires.bas",
       "Excel/modUI.bas",
       "Excel/modTests_Excel.bas"
     ],
@@ -62,6 +63,15 @@
           { "texte": "Bloquer des creneaux","macro": "AgendaBloquer" },
           { "texte": "Imprimer le jour",    "macro": "AgendaImprimerJour" },
           { "texte": "Retour Accueil",      "macro": "AgendaRetourAccueil" }
+        ] },
+      { "nom": "Honoraires",
+        "boutons": [
+          { "texte": "Impayes",              "macro": "HonorairesImpayes" },
+          { "texte": "Cheques a remettre",   "macro": "HonorairesCheques" },
+          { "texte": "Bordereau de remise",  "macro": "HonorairesBordereauCheques" },
+          { "texte": "Recettes du mois",     "macro": "HonorairesRecettes" },
+          { "texte": "Tableau de bord",      "macro": "HonorairesTableauDeBord" },
+          { "texte": "Retour Accueil",       "macro": "HonorairesRetourAccueil" }
         ] }
     ],
     "boutons": [
@@ -72,6 +82,7 @@
       { "texte": "Arrivee d'un patient", "macro": "UI_ArriveePatient" },
       { "texte": "Courriers a traiter",  "macro": "UI_CourriersATraiter" },
       { "texte": "Correspondants",       "macro": "UI_Correspondants" },
+      { "texte": "Honoraires et encaissements", "macro": "UI_Honoraires" },
       { "texte": "Journal des actes",    "macro": "UI_OuvrirJournal" },
       { "texte": "Calage imprimante CERFA", "macro": "UI_CalageCerfa" }
     ]

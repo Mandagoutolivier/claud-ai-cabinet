@@ -143,6 +143,14 @@ Erreur:
     MsgBox "Erreur : " & Err.Description, vbCritical, "Cabinet"
 End Sub
 
+Public Sub UI_Honoraires()
+    On Error GoTo Erreur
+    modHonoraires.Afficher
+    Exit Sub
+Erreur:
+    MsgBox "Erreur : " & Err.Description, vbCritical, "Cabinet"
+End Sub
+
 Public Sub UI_OuvrirJournal()
     modJournal.OuvrirJournal
 End Sub
