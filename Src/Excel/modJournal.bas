@@ -19,7 +19,7 @@ Public Function EntetesJournal() As Variant
                            "PatientID", "Nom", "Prenom", "DDN", "NIR", _
                            "CodeActe", "CodeOfficiel", "MontantDu", "MontantRegle", _
                            "ModePaiement", "TiersPayant", "Paye", "DateEncaissement", _
-                           "FeuilleSoinsEtat", "DateFeuilleSoins", "Notes")
+                           "FeuilleSoinsEtat", "DateFeuilleSoins", "Notes", "RdvID")
 End Function
 
 Public Sub AssurerJournalAnnee(Optional ByVal annee As Long = 0)

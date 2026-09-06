@@ -147,9 +147,14 @@ End Function
 Public Function EnregistrerSeance(ByVal infos As Object, ByVal actesChoisis As Collection, _
                                   ByVal modePaiement As String, ByVal montantRegle As Double, _
                                   ByVal tiersPayant As Boolean, ByVal dateActe As String) As String
-    Dim seanceID As String, lignes As Collection, a As Object, restant As Double
+    Dim seanceID As String, lignes As Collection, a As Object, restant As Double, rdvID As String
     seanceID = SeanceIDDe(infos)
     If Len(dateActe) = 0 Then dateActe = DateActeDe(infos)
+    ' rendez-vous du patient ce jour-la : rattache a la seance, jamais bloquant
+    On Error Resume Next
+    rdvID = modAgenda.RdvPourSeance(ValeurOuVide(infos, "PatientID"), dateActe)
+    On Error GoTo 0
+    If Len(rdvID) > 0 Then infos("RdvID") = rdvID
 
     If modJournal.SeanceExiste(seanceID, AnneeDeDate(dateActe)) Then
         Err.Raise vbObjectError + 610, "modActes", _
@@ -169,6 +174,13 @@ Public Function EnregistrerSeance(ByVal infos As Object, ByVal actesChoisis As C
         End If
     Next a
     modJournal.Ajouter lignes, AnneeDeDate(dateActe)
+    ' le RDV passe a "Honore" et porte l'identifiant de consultation
+    If Len(rdvID) > 0 Then
+        On Error Resume Next
+        modAgenda.LierConsultation rdvID, ValeurOuVide(infos, "ConsultationID"), AnneeDeDate(dateActe)
+        If Err.Number <> 0 Then modLog.LogErreur "Lien RDV/consultation : " & Err.Description
+        On Error GoTo 0
+    End If
     EnregistrerSeance = seanceID
 End Function
 
@@ -206,6 +218,7 @@ Private Function LigneJournal(ByVal seanceID As String, ByVal infos As Object, _
     d("DateEncaissement") = IIf(regle > 0, Format$(Date, "dd/mm/yyyy"), "")
     d("FeuilleSoinsEtat") = ""
     d("DateFeuilleSoins") = ""
+    d("RdvID") = ValeurOuVide(infos, "RdvID")
     Set LigneJournal = d
 End Function
 

@@ -183,3 +183,45 @@ Public Sub Test_J5X(Optional ByVal racine As String = "")
 Echec:
     modLog.TestResultat "exception " & Err.Number, False, Err.Description
 End Sub
+
+Public Sub Test_AGENDA2(Optional ByVal racine As String = "")
+    If Len(racine) > 0 Then modConfig.DefinirRacine racine
+    modLog.TestDebut "AGENDA chevauchements, deplacement, indisponibilites, vue mois"
+    On Error GoTo Echec
+    Dim ws As Worksheet, id1 As String, id2 As String, jour As String, conflit As String, n As Long
+    jour = Format$(Date + 30, "dd/mm/yyyy")
+    id1 = modAgenda.AjouterRdv("P00002", jour, "14:00", "30", "ETT", "test chevauchement", True)
+    ' chevauchement reel (14:15 dans 14:00-14:30) et non chevauchement (14:30)
+    conflit = modAgenda.ConflitRdv(jour, "14:15", "15")
+    modLog.Verifier "14:15 chevauche 14:00/30", Len(conflit) > 0, conflit
+    modLog.Verifier "14:30 libre apres 14:00/30", Len(modAgenda.ConflitRdv(jour, "14:30", "15")) = 0
+    ' un RDV ne se gene pas lui-meme quand on le deplace
+    modLog.Verifier "deplacement : le RDV s'exclut lui-meme", Len(modAgenda.ConflitRdv(jour, "14:00", "30", id1)) = 0
+    id2 = modAgenda.ModifierRdv(id1, Year(Date + 30), jour, "15:00", "45", "ETT", "deplace")
+    modLog.Verifier "deplacement garde l'ID", id2 = id1, id2
+    modLog.Verifier "ancien creneau libere", Len(modAgenda.ConflitRdv(jour, "14:00", "15")) = 0
+    modLog.Verifier "nouveau creneau occupe", Len(modAgenda.ConflitRdv(jour, "15:30", "15")) > 0
+    ' indisponibilite d'une journee
+    n = modAgenda.BloquerPeriode(Format$(Date + 31, "dd/mm/yyyy"), "", "", "", "Test formation")
+    modLog.Verifier "1 jour bloque", n = 1, n
+    conflit = modAgenda.ConflitRdv(Format$(Date + 31, "dd/mm/yyyy"), "10:00", "15")
+    modLog.Verifier "journee bloquee refuse un RDV", InStr(conflit, "INDISPONIBLE") > 0, conflit
+    modLog.Verifier "liste d'arrivee sans les blocages", modAgenda.RdvDuJour(Format$(Date + 31, "dd/mm/yyyy")).Count = 0
+    ' navigation mois et vue mois
+    modAgendaVue.AfficherAgenda Date
+    Set ws = ThisWorkbook.Worksheets("Agenda")
+    modAgendaVue.AgendaMoisSuivant
+    modLog.Verifier "mois suivant (vue semaine)", InStr(ws.Cells(2, 1).Value, Format$(DateAdd("m", 1, Date) - Weekday(DateAdd("m", 1, Date), vbMonday) + 1, "dd/mm/yyyy")) > 0, ws.Cells(2, 1).Value
+    modAgendaVue.AgendaAujourdhui
+    modAgendaVue.AgendaVueMois
+    modLog.Verifier "vue mois : titre = mois courant", InStr(ws.Cells(2, 1).Value, CStr(Year(Date))) > 0, ws.Cells(2, 1).Value
+    modLog.Verifier "vue mois : 7 jours en en-tete", ws.Cells(3, 8).Value = "Dimanche", ws.Cells(3, 8).Value
+    modAgendaVue.AgendaVueMois
+    modLog.Verifier "retour vue semaine", InStr(ws.Cells(2, 1).Value, "Semaine du") > 0, ws.Cells(2, 1).Value
+    modAgendaVue.ArreterRafraichissement
+    ' nettoyage
+    modAgenda.MarquerStatut id1, "Annule", Year(Date + 30)
+    Exit Sub
+Echec:
+    modLog.TestResultat "exception " & Err.Number, False, Err.Description
+End Sub

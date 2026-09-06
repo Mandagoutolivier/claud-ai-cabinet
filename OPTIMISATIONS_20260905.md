@@ -45,6 +45,31 @@ Corrections apportées d'après `Analyse_modele_gestion_cabinet_20260905.md`
 - `ufRdvEdit` : validation stricte et demande de confirmation explicite en
   cas de chevauchement. `modAgendaVue.CreneauLibre` s'appuie sur la même règle.
 
+### 3 bis. Agenda — second lot (06/09/2026)
+
+- **Correctif bloquant** : `ConflitRdv` passait des heures `hh:mm` à
+  `IntervallesSeChevauchent` qui attend des minutes → erreur 13 à chaque
+  prise de RDV. Converti par `MinutesDepuisMinuit`.
+- **Navigation par mois** : boutons « << Mois » / « Mois >> » (en vue
+  semaine : même jour de semaine un mois plus tôt/tard), « Aller à une
+  date… » (`jj/mm/aaaa` ou `+N`/`-N` jours).
+- **Vue mois** : calendrier du mois, nombre de RDV et indisponibilités par
+  jour, double-clic sur un jour → sa semaine. Bouton « Vue mois / semaine ».
+- **Déplacer / modifier un RDV** : depuis le double-clic sur un RDV, même
+  écran que la prise de RDV ; garde l'ID (nouvelle ligne seulement si
+  l'année change) ; le RDV déplacé ne se gêne pas lui-même.
+- **Indisponibilités** (`Statut = Bloque`, `TypeActe = INDISPO`) : congés,
+  formation… sur une période, journée entière ou plage horaire ; grisées
+  dans l'agenda, refusées à la prise de RDV (avec le motif), levables ;
+  exclues de la liste d'arrivée des patients.
+- **Lien RDV ↔ consultation** : à l'enregistrement de la séance, le RDV du
+  patient ce jour-là passe à « Honore » et reçoit `ConsultationID` ;
+  le journal porte `RdvID`. Colonnes ajoutées par migration automatique.
+- **Rafraîchissement multi-poste** : `[AGENDA] RafraichirSecondes` (60) —
+  redessin silencieux uniquement si le fichier agenda a changé.
+- **Durée par motif** : `[AGENDA] DureeParActe=CS:15;APC:30;…` — la durée
+  suit le motif choisi (valeurs par défaut à ajuster).
+
 ## 4. Dates et identités
 
 - `modTexte` : `DateFrValide` (calendrier réel, années bissextiles, pas de

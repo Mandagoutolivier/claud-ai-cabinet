@@ -64,6 +64,15 @@ enregistrements. Testez-le vraiment (renommez le dossier `Base` une seconde).
 | 4.3 | RDV 10:30 après un 10:00/30 | aucun avertissement (pas de chevauchement) |
 | 4.4 | Date 32/13/2026, heure 25:00 | refus de saisie |
 | 4.5 | Annuler un RDV puis reprendre son créneau | plus d'avertissement |
+| 4.6 | Double-clic sur un RDV → « Déplacer / modifier », changer l'heure | le RDV bouge, garde son ID, l'ancien créneau est libre |
+| 4.7 | Déplacer un RDV sur un créneau occupé | avertissement de chevauchement, confirmation demandée |
+| 4.8 | « Bloquer des créneaux » : deux jours entiers, motif « Congés » | jours grisés INDISPONIBLE, prise de RDV avertit « INDISPONIBLE : Congés » |
+| 4.9 | Double-clic sur l'indisponibilité → « Lever » | créneau redevenu libre |
+| 4.10 | « << Mois » / « Mois >> » depuis la semaine | même jour de semaine un mois avant/après |
+| 4.11 | « Vue mois / semaine » puis double-clic sur un jour | calendrier du mois (nb de RDV par jour), puis semaine de ce jour |
+| 4.12 | « Aller à une date… » avec `+90` | semaine dans trois mois |
+| 4.13 | Enregistrer la séance d'un patient qui avait RDV ce jour | le RDV passe à « (vu) », colonne `ConsultationID` remplie, `RdvID` au journal |
+| 4.14 | Sur l'autre poste, prendre un RDV ; attendre `RafraichirSecondes` | la grille se met à jour seule, sans perdre la sélection |
 
 ## 5. Dates et dossiers
 

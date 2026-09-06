@@ -9,6 +9,13 @@ End Sub
 Private Sub Workbook_BeforeClose(Cancel As Boolean)
     On Error Resume Next
     modEchange.ArreterScrutation
+    modAgendaVue.ArreterRafraichissement
+End Sub
+
+' On quitte la feuille Agenda : plus de rafraichissement en arriere-plan
+Private Sub Workbook_SheetDeactivate(ByVal Sh As Object)
+    On Error Resume Next
+    If Sh.Name = "Agenda" Then modAgendaVue.ArreterRafraichissement
 End Sub
 
 ' Double-clic dans la grille de l'agenda : prise de RDV / actions sur un RDV
