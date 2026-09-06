@@ -33,6 +33,73 @@ function Ko([string]$t)    { Write-Host "  !!  $t" -ForegroundColor Red; $script
 function Info([string]$t)  { Write-Host "  --  $t" -ForegroundColor Yellow }
 $erreurs = @()
 
+# ---------------------------------------------------------------------
+# Complete un config.ini de poste avec les cles ABSENTES du config.ini de
+# reference (celui du paquet), sans jamais modifier une valeur presente.
+# Les commentaires qui precedent une cle dans la reference sont recopies.
+# Une section absente est ajoutee en fin de fichier.
+# ---------------------------------------------------------------------
+function Completer-ConfigIni([string]$reference, [string]$cible) {
+    if (-not (Test-Path $reference)) { return }
+    if (-not (Test-Path $cible)) { Copy-Item $reference $cible; Ok "config.ini cree : $cible"; return }
+
+    function Lire-Ini([string]$chemin) {
+        $sections = [ordered]@{}; $section = ''; $commentaires = @()
+        foreach ($ligne in [IO.File]::ReadAllLines($chemin, [Text.Encoding]::UTF8)) {
+            $t = $ligne.Trim()
+            if ($t -match '^\[(.+)\]$') { $section = $matches[1]; if (-not $sections.Contains($section)) { $sections[$section] = [ordered]@{} }; $commentaires = @(); continue }
+            if ($t -eq '' -or $t.StartsWith(';') -or $t.StartsWith('#')) { if ($t -ne '') { $commentaires += $ligne } else { $commentaires = @() }; continue }
+            if ($t -match '^([^=]+?)\s*=(.*)$') {
+                if ($section -eq '') { continue }
+                $sections[$section][$matches[1].Trim()] = @{ ligne = $ligne; commentaires = $commentaires }
+                $commentaires = @()
+            }
+        }
+        return $sections
+    }
+
+    $ref = Lire-Ini $reference
+    $act = Lire-Ini $cible
+    $lignes = [Collections.Generic.List[string]]::new([IO.File]::ReadAllLines($cible, [Text.Encoding]::UTF8))
+    $ajouts = 0
+
+    foreach ($section in $ref.Keys) {
+        $manquantes = @()
+        foreach ($cle in $ref[$section].Keys) {
+            if (-not ($act.Contains($section) -and $act[$section].Contains($cle))) { $manquantes += $cle }
+        }
+        if ($manquantes.Count -eq 0) { continue }
+
+        # position d'insertion : fin de la section existante, sinon fin du fichier
+        $idx = -1
+        for ($i = 0; $i -lt $lignes.Count; $i++) { if ($lignes[$i].Trim() -eq "[$section]") { $idx = $i; break } }
+        $bloc = @()
+        if ($idx -lt 0) {
+            $bloc += ''; $bloc += "[$section]"
+            $insertion = $lignes.Count
+        } else {
+            $insertion = $lignes.Count
+            for ($i = $idx + 1; $i -lt $lignes.Count; $i++) { if ($lignes[$i].Trim() -match '^\[.+\]$') { $insertion = $i; break } }
+            # remonter au-dessus des lignes vides qui separent les sections
+            while ($insertion -gt $idx + 1 -and $lignes[$insertion - 1].Trim() -eq '') { $insertion-- }
+        }
+        foreach ($cle in $manquantes) {
+            $bloc += $ref[$section][$cle].commentaires
+            $bloc += $ref[$section][$cle].ligne
+            $ajouts++
+        }
+        $lignes.InsertRange($insertion, [string[]]$bloc)
+    }
+
+    if ($ajouts -gt 0) {
+        Copy-Item $cible "$cible.avant_$(Get-Date -Format yyyyMMdd-HHmmss).bak" -Force
+        [IO.File]::WriteAllLines($cible, $lignes, (New-Object Text.UTF8Encoding($false)))
+        Ok "config.ini complete : $ajouts cle(s) ajoutee(s) (valeurs existantes intactes, copie .bak conservee)"
+    } else {
+        Ok 'config.ini deja complet'
+    }
+}
+
 $git   = Join-Path $Nas 'CabinetCardio-Git'
 $dev   = Join-Path $Nas 'CabinetCardio-Dev'
 $build = Join-Path $dev 'Build'
@@ -138,6 +205,10 @@ $installeur = Join-Path $paquet 'Build\installer_cabinet.ps1'
 if (-not (Test-Path $installeur)) { throw "installer_cabinet.ps1 introuvable : $installeur" }
 Etape "Installation sur ce poste (Medecin, racine $RacineMedecin)"
 & $installeur -Role Medecin -Racine $RacineMedecin
+
+# la racine est partagee avec le secretariat : un seul config.ini a completer
+Etape 'Configuration : cles nouvelles'
+Completer-ConfigIni (Join-Path $paquet 'Donnees\Config\config.ini') (Join-Path $RacineMedecin 'Config\config.ini')
 
 # ------------------------------------------------------------ 5. poste SECRETARIAT (RDC), best effort
 $secOk = $false
