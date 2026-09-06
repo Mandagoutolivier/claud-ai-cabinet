@@ -219,6 +219,14 @@ Public Sub Test_AGENDA2(Optional ByVal racine As String = "")
     modAgendaVue.AgendaVueMois
     modLog.Verifier "retour vue semaine", InStr(ws.Cells(2, 1).Value, "Semaine du") > 0, ws.Cells(2, 1).Value
     modAgendaVue.ArreterRafraichissement
+    ' patient provisoire
+    Dim prov As Object, pats As Collection, trouve As Boolean, p As Object
+    Set prov = modAgenda.CreerPatientProvisoire("TESTPROV", "Zoe", "0600000000")
+    modLog.Verifier "patient provisoire cree avec ID", Left$(prov("ID"), 1) = "P", prov("ID")
+    For Each p In modAgenda.PatientsProvisoires()
+        If p("ID") = prov("ID") Then trouve = True
+    Next p
+    modLog.Verifier "liste des provisoires le contient", trouve
     ' nettoyage
     modAgenda.MarquerStatut id1, "Annule", Year(Date + 30)
     Exit Sub

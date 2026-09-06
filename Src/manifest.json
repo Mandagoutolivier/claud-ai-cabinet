@@ -60,6 +60,7 @@
           { "texte": "Vue mois / semaine",  "macro": "AgendaVueMois" },
           { "texte": "Aller a une date...", "macro": "AgendaAllerA" },
           { "texte": "Bloquer des creneaux","macro": "AgendaBloquer" },
+          { "texte": "Imprimer le jour",    "macro": "AgendaImprimerJour" },
           { "texte": "Retour Accueil",      "macro": "AgendaRetourAccueil" }
         ] }
     ],

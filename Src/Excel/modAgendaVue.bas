@@ -187,6 +187,99 @@ Erreur:
     MsgBox "Blocage impossible : " & Err.Description, vbExclamation, "Cabinet"
 End Sub
 
+' Feuille du jour imprimable : liste des RDV (heure, patient, telephone,
+' motif, duree, notes, statut), apercu avant impression + PDF dans Echange
+' pour le poste medecin. Date demandee (defaut : jour affiche / aujourd'hui).
+Public Sub AgendaImprimerJour()
+    On Error GoTo Erreur
+    Dim s As String, d As Date, ws As Worksheet, rdv As Object, r As Long, p As Object
+    Dim pdf As String, nomJour As Variant, tel As String
+    nomJour = Array("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
+    Initialiser
+    d = IIf(mLundi <= Date And Date < mLundi + 7, Date, mLundi)
+    s = Trim$(InputBox("Jour a imprimer (jj/mm/aaaa) :", "Feuille du jour", Format$(d, "dd/mm/yyyy")))
+    If Len(s) = 0 Then Exit Sub
+    If Not modTexte.DateFrValide(s) Then MsgBox "Date invalide : " & s, vbExclamation, "Cabinet": Exit Sub
+    d = modTexte.DateFr(s)
+    ChargerPatients
+    Application.ScreenUpdating = False
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("Jour")
+    On Error GoTo Erreur
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
+        ws.Name = "Jour"
+    End If
+    ws.Cells.Clear
+    ws.Cells(1, 1).Value = modConfig.Config("GENERAL", "NomCabinet", "Cabinet") & " - " & _
+                           nomJour(Weekday(d, vbMonday) - 1) & " " & Format$(d, "dd/mm/yyyy")
+    ws.Cells(1, 1).Font.Bold = True: ws.Cells(1, 1).Font.Size = 14
+    ws.Cells(2, 1).Value = "Imprime le " & Format$(Now, "dd/mm/yyyy hh:nn")
+    ws.Cells(2, 1).Font.Color = RGB(120, 120, 120)
+    r = 4
+    ws.Cells(r, 1).Value = "Heure": ws.Cells(r, 2).Value = "Patient": ws.Cells(r, 3).Value = "Ne(e) le"
+    ws.Cells(r, 4).Value = "Telephone": ws.Cells(r, 5).Value = "Motif": ws.Cells(r, 6).Value = "Duree"
+    ws.Cells(r, 7).Value = "Notes": ws.Cells(r, 8).Value = "Statut"
+    ws.Range(ws.Cells(r, 1), ws.Cells(r, 8)).Font.Bold = True
+    ws.Range(ws.Cells(r, 1), ws.Cells(r, 8)).Borders(xlEdgeBottom).LineStyle = xlContinuous
+    ws.Columns(1).NumberFormat = "@"
+    For Each rdv In RdvPeriode(d, d)
+        If rdv("Statut") <> "Annule" Then
+            r = r + 1
+            ws.Cells(r, 1).Value = rdv("Heure")
+            If modAgenda.EstBlocage(rdv) Then
+                ws.Cells(r, 2).Value = "INDISPONIBLE - " & rdv("Notes")
+                ws.Range(ws.Cells(r, 1), ws.Cells(r, 8)).Font.Italic = True
+            Else
+                ws.Cells(r, 2).Value = NomPatient(rdv("PatientID"))
+                If mPatients.Exists(rdv("PatientID")) Then
+                    Set p = mPatients(rdv("PatientID"))
+                    ws.Cells(r, 3).Value = p("DDN")
+                    tel = p("Mobile"): If Len(tel) = 0 Then tel = p("Tel")
+                    ws.Cells(r, 4).Value = tel
+                End If
+                ws.Cells(r, 5).Value = rdv("TypeActe")
+                ws.Cells(r, 6).Value = rdv("DureeMin") & " min"
+                ws.Cells(r, 7).Value = rdv("Notes")
+                ws.Cells(r, 8).Value = rdv("Statut")
+            End If
+            ws.Range(ws.Cells(r, 1), ws.Cells(r, 8)).Borders(xlEdgeBottom).LineStyle = xlDot
+            ws.Range(ws.Cells(r, 1), ws.Cells(r, 8)).VerticalAlignment = xlTop
+        End If
+    Next rdv
+    If r = 4 Then r = 5: ws.Cells(r, 2).Value = "(aucun rendez-vous)"
+    ws.Columns(1).ColumnWidth = 7: ws.Columns(2).ColumnWidth = 28: ws.Columns(3).ColumnWidth = 11
+    ws.Columns(4).ColumnWidth = 14: ws.Columns(5).ColumnWidth = 10: ws.Columns(6).ColumnWidth = 7
+    ws.Columns(7).ColumnWidth = 34: ws.Columns(8).ColumnWidth = 9
+    ws.Columns(7).WrapText = True
+    With ws.PageSetup
+        .Orientation = xlLandscape
+        .Zoom = False
+        .FitToPagesWide = 1
+        .FitToPagesTall = False
+        .PrintArea = ws.Range(ws.Cells(1, 1), ws.Cells(r, 8)).Address
+        .LeftMargin = Application.CentimetersToPoints(1)
+        .RightMargin = Application.CentimetersToPoints(1)
+        .CenterFooter = "Page &P / &N"
+    End With
+    ' PDF dans Echange : lisible depuis le poste medecin sans ouvrir Excel
+    pdf = modConfig.Chemin("Echange") & "\Jour_" & Format$(d, "yyyy-mm-dd") & ".pdf"
+    On Error Resume Next
+    ws.ExportAsFixedFormat 0, pdf
+    On Error GoTo Erreur
+    Application.ScreenUpdating = True
+    ws.Activate
+    ws.PrintPreview
+    If Len(Dir$(pdf)) > 0 Then
+        MsgBox "Feuille du jour exportee : " & pdf, vbInformation, "Cabinet"
+    End If
+    modAgendaVue.Rendre
+    Exit Sub
+Erreur:
+    Application.ScreenUpdating = True
+    MsgBox "Feuille du jour impossible : " & Err.Description, vbExclamation, "Cabinet"
+End Sub
+
 Public Sub AgendaRetourAccueil()
     Set mPatientPreselect = Nothing
     ArreterRafraichissement
@@ -505,11 +598,7 @@ Private Sub PlacerRdv(ByVal ws As Worksheet, ByVal rdv As Object)
         nom = "INDISPONIBLE"
         texte = nom & " - " & rdv("Notes")
     Else
-        If mPatients.Exists(rdv("PatientID")) Then
-            nom = mPatients(rdv("PatientID"))("Nom") & " " & mPatients(rdv("PatientID"))("Prenom")
-        Else
-            nom = rdv("PatientID")
-        End If
+        nom = NomPatient(rdv("PatientID"))
         texte = nom
         If Len(rdv("TypeActe")) > 0 Then texte = texte & " - " & rdv("TypeActe")
         If statut = "Arrive" Then texte = texte & " (arrive " & rdv("HeureArrivee") & ")"
@@ -521,7 +610,7 @@ Private Sub PlacerRdv(ByVal ws As Worksheet, ByVal rdv As Object)
     Else
         ws.Cells(ligne, col).Value = texte
     End If
-    ws.Cells(ligne, col).Interior.Color = CouleurStatut(statut)
+    ws.Cells(ligne, col).Interior.Color = CouleurRdv(rdv)
     If blocage Then ws.Cells(ligne, col).Font.Italic = True
     If Not mCarte.Exists(cle) Then Set mCarte(cle) = New Collection
     mCarte(cle).Add rdv
@@ -530,7 +619,7 @@ Private Sub PlacerRdv(ByVal ws As Worksheet, ByVal rdv As Object)
         If ligne + k > derniereLigne Then Exit For
         If Len(ws.Cells(ligne + k, col).Value) = 0 Then
             ws.Cells(ligne + k, col).Value = ChrW$(8627) & " " & nom
-            ws.Cells(ligne + k, col).Interior.Color = CouleurStatut(statut)
+            ws.Cells(ligne + k, col).Interior.Color = CouleurRdv(rdv)
             ws.Cells(ligne + k, col).Font.Color = RGB(120, 120, 120)
             If blocage Then ws.Cells(ligne + k, col).Font.Italic = True
             Dim cle2 As String
@@ -540,6 +629,46 @@ Private Sub PlacerRdv(ByVal ws As Worksheet, ByVal rdv As Object)
         End If
     Next k
 End Sub
+
+' Nom affiche ; "[prov.]" pour une fiche provisoire a completer
+Private Function NomPatient(ByVal patientID As String) As String
+    Dim p As Object
+    If mPatients.Exists(patientID) Then
+        Set p = mPatients(patientID)
+        NomPatient = p("Nom") & " " & p("Prenom")
+        If p.Exists("Provisoire") Then
+            If p("Provisoire") = "O" Then NomPatient = NomPatient & " [prov.]"
+        End If
+    Else
+        NomPatient = patientID
+    End If
+End Function
+
+' Couleur d'un RDV : le STATUT prime (arrive, absent, vu, bloque) ; un RDV
+' simplement prevu prend la couleur de son motif ([AGENDA] CouleurParActe,
+' CODE:RRGGBB hexa), sinon le jaune "prevu".
+Private Function CouleurRdv(ByVal rdv As Object) As Long
+    Dim regle As Variant, parts() As String, hexa As String
+    If rdv("Statut") <> "Prevu" And Len(rdv("Statut")) > 0 Then
+        CouleurRdv = CouleurStatut(rdv("Statut"))
+        Exit Function
+    End If
+    On Error Resume Next
+    For Each regle In Split(modConfig.Config("AGENDA", "CouleurParActe", ""), ";")
+        parts = Split(Trim$(regle), ":")
+        If UBound(parts) = 1 Then
+            If UCase$(Trim$(parts(0))) = UCase$(Trim$(rdv("TypeActe"))) Then
+                hexa = Trim$(parts(1))
+                If Len(hexa) = 6 Then
+                    CouleurRdv = RGB(CLng("&H" & Mid$(hexa, 1, 2)), CLng("&H" & Mid$(hexa, 3, 2)), CLng("&H" & Mid$(hexa, 5, 2)))
+                    If Err.Number = 0 Then Exit Function
+                    Err.Clear
+                End If
+            End If
+        End If
+    Next regle
+    CouleurRdv = CouleurStatut("Prevu")
+End Function
 
 Private Function CouleurStatut(ByVal statut As String) As Long
     Select Case statut

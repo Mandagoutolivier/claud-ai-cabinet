@@ -99,6 +99,22 @@ Private Sub btnAgenda_Click()
     modAgendaVue.AfficherAgenda d, mPatient
 End Sub
 
+' Nouveau patient au telephone : fiche minimale, le RDV n'attend pas
+Private Sub btnProvisoire_Click()
+    On Error GoTo Erreur
+    Dim nom As String, prenom As String, tel As String, p As Object
+    nom = Trim$(InputBox("NOM du patient :", "Nouveau patient (provisoire)"))
+    If Len(nom) = 0 Then Exit Sub
+    prenom = Trim$(InputBox("Prenom :", "Nouveau patient (provisoire)"))
+    tel = Trim$(InputBox("Telephone (pour le rappeler) :", "Nouveau patient (provisoire)"))
+    Set p = modAgenda.CreerPatientProvisoire(nom, prenom, tel)
+    Set mPatient = p
+    lblPatient.Caption = p("Prenom") & " " & p("Nom") & " (PROVISOIRE - fiche a completer)"
+    Exit Sub
+Erreur:
+    MsgBox "Creation impossible : " & Err.Description, vbExclamation, "Cabinet"
+End Sub
+
 Private Sub btnPatient_Click()
     Dim p As Object
     Set p = modUI.ChoisirPatientX()

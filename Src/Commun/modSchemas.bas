@@ -14,7 +14,7 @@ Public Function EntetesPatients() As Variant
                             "Adresse1", "Adresse2", "CP", "Ville", "Tel", "Mobile", "Email", _
                             "MedTraitantID", "Mutuelle", "ALD", _
                             "AssureNom", "AssurePrenom", "AssureDDN", "AssureNIR", _
-                            "Notes", "DateCreation", "Actif")
+                            "Notes", "DateCreation", "Actif", "Provisoire")
 End Function
 
 ' Feuille CORRESPONDANTS du meme classeur

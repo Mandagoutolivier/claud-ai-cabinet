@@ -198,6 +198,44 @@ Public Function RdvParID(ByVal rdvID As String, Optional ByVal annee As Long = 0
     Next r
 End Function
 
+' --- patient provisoire (nouveau patient au telephone) -------------------
+' La secretaire ne doit pas etre bloquee par la fiche complete : on cree
+' une fiche minimale (nom, prenom, telephone) marquee Provisoire = O.
+' Elle est completee plus tard (ufPatientEdit efface la marque des que la
+' date de naissance est renseignee). Le RDV a donc TOUJOURS un PatientID.
+Public Function CreerPatientProvisoire(ByVal nom As String, ByVal prenom As String, _
+                                       ByVal tel As String) As Object
+    Dim d As Object, id As String
+    nom = UCase$(Trim$(nom)): prenom = Trim$(prenom): tel = Trim$(tel)
+    If Len(nom) = 0 Then Err.Raise vbObjectError + 626, "modAgenda", "Le nom est obligatoire."
+    modBaseIO.AssurerBasePatients
+    Set d = CreateObject("Scripting.Dictionary")
+    d("Nom") = nom
+    d("Prenom") = prenom
+    d("Tel") = tel
+    d("Provisoire") = "O"
+    d("Notes") = "Fiche PROVISOIRE creee depuis l'agenda le " & Format$(Date, "dd/mm/yyyy") & " - a completer"
+    d("DateCreation") = Format$(Now, "dd/mm/yyyy")
+    d("Actif") = "1"
+    id = modBaseIO.AjouterLigne(modConfig.FichierPatients(), "PATIENTS", d, "P")
+    d("ID") = id
+    d("DDN") = ""
+    Set CreerPatientProvisoire = d
+End Function
+
+' Fiches provisoires encore a completer (rappel a l'accueil)
+Public Function PatientsProvisoires() As Collection
+    Dim res As Collection, p As Object
+    Set res = New Collection
+    On Error Resume Next
+    For Each p In modBaseIO.LireTableX(modConfig.FichierPatients(), "PATIENTS")
+        If p.Exists("Provisoire") Then
+            If p("Provisoire") = "O" Then res.Add p
+        End If
+    Next p
+    Set PatientsProvisoires = res
+End Function
+
 ' --- lien rendez-vous <-> consultation ---------------------------------
 ' RDV d'un patient un jour donne (hors annules et indisponibilites), "" si
 ' aucun. Sert a rattacher la seance enregistree au journal.

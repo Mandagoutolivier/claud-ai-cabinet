@@ -67,6 +67,13 @@ Corrections apportées d'après `Analyse_modele_gestion_cabinet_20260905.md`
   le journal porte `RdvID`. Colonnes ajoutées par migration automatique.
 - **Rafraîchissement multi-poste** : `[AGENDA] RafraichirSecondes` (60) —
   redessin silencieux uniquement si le fichier agenda a changé.
+- **Patient provisoire** : bouton « Nouveau patient (nom + téléphone) »
+  dans la prise de RDV ; fiche minimale marquée `Provisoire = O`, affichée
+  « [prov.] », la marque tombe quand la date de naissance est saisie.
+- **Feuille du jour imprimable** : bouton « Imprimer le jour » — aperçu
+  paysage + PDF `Echange\Jour_AAAA-MM-JJ.pdf` pour le poste médecin.
+- **Couleur par motif** : `[AGENDA] CouleurParActe=ETT:C6E0B4;…` pour les
+  RDV prévus ; le statut garde priorité (arrivé, absent, vu, indisponible).
 - **Durée par motif** : `[AGENDA] DureeParActe=CS:15;APC:30;…` — la durée
   suit le motif choisi (valeurs par défaut à ajuster).
 

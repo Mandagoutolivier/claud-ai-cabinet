@@ -108,6 +108,9 @@ Private Sub btnOK_Click()
                vbInformation, "Cabinet"
     Else
         d("DateModif") = Format$(Now, "dd/mm/yyyy")
+        ' fiche provisoire (creee depuis l'agenda) : complete des que la
+        ' date de naissance est renseignee
+        If Len(Trim$(txtDDN.Text)) > 0 Then d("Provisoire") = ""
         modBaseIO.ModifierLigne modConfig.FichierPatients(), "PATIENTS", "ID", mID, d
         MsgBox "Fiche mise a jour.", vbInformation, "Cabinet"
     End If

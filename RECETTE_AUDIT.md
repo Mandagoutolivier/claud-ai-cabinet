@@ -73,6 +73,10 @@ enregistrements. Testez-le vraiment (renommez le dossier `Base` une seconde).
 | 4.12 | « Aller à une date… » avec `+90` | semaine dans trois mois |
 | 4.13 | Enregistrer la séance d'un patient qui avait RDV ce jour | le RDV passe à « (vu) », colonne `ConsultationID` remplie, `RdvID` au journal |
 | 4.14 | Sur l'autre poste, prendre un RDV ; attendre `RafraichirSecondes` | la grille se met à jour seule, sans perdre la sélection |
+| 4.15 | Prise de RDV → « Nouveau patient (nom + téléphone) » | RDV créé, affiché « [prov.] » ; la fiche apparaît dans la base marquée provisoire |
+| 4.16 | Ouvrir cette fiche, saisir la date de naissance, enregistrer | la marque provisoire disparaît, « [prov.] » aussi |
+| 4.17 | « Imprimer le jour » | aperçu paysage (heure, patient, tél, motif, durée, notes, statut) + PDF `Echange\Jour_AAAA-MM-JJ.pdf` |
+| 4.18 | RDV ETT, Holter, consultation prévus le même jour | trois couleurs différentes ; un RDV « arrivé » reste bleu quel que soit le motif |
 
 ## 5. Dates et dossiers
 

@@ -5,6 +5,7 @@
   "controls": [
     { "type": "Label",   "name": "lblPatient",   "left": 12,  "top": 16,  "width": 250, "height": 20, "caption": "(aucun patient choisi)", "fontsize": 10, "bold": true },
     { "type": "CommandButton", "name": "btnPatient", "left": 280, "top": 12, "width": 110, "height": 24, "caption": "Choisir patient...", "fontsize": 9 },
+    { "type": "CommandButton", "name": "btnProvisoire", "left": 12, "top": 36, "width": 250, "height": 14, "caption": "Nouveau patient (nom + téléphone, fiche à compléter plus tard)", "fontsize": 7 },
     { "type": "Label",   "name": "lblDate",      "left": 12,  "top": 52,  "width": 92,  "height": 18, "caption": "Date (jj/mm/aaaa)", "fontsize": 10 },
     { "type": "TextBox", "name": "txtDate",      "left": 130, "top": 50,  "width": 90,  "height": 20, "fontsize": 10 },
     { "type": "Label",   "name": "lblHeure",     "left": 240, "top": 52,  "width": 50,  "height": 18, "caption": "Heure", "fontsize": 10 },
