@@ -46,6 +46,7 @@
       "Excel/modJournal.bas",
       "Excel/modCerfaPrint.bas",
       "Excel/modHonoraires.bas",
+      "Excel/modImportAgenda.bas",
       "Excel/modUI.bas",
       "Excel/modTests_Excel.bas"
     ],
@@ -86,7 +87,8 @@
       { "texte": "Honoraires et encaissements", "macro": "UI_Honoraires" },
       { "texte": "Journal des actes",    "macro": "UI_OuvrirJournal" },
       { "texte": "Calage imprimante CERFA", "macro": "UI_CalageCerfa" },
-      { "texte": "Controle des fiches (ECG)", "macro": "UI_ControleFiches" }
+      { "texte": "Controle des fiches (ECG)", "macro": "UI_ControleFiches" },
+      { "texte": "Importer un agenda (xlsx)", "macro": "UI_ImporterAgenda" }
     ]
   }
 }
