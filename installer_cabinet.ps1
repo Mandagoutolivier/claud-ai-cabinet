@@ -152,8 +152,20 @@ Etape 'Tache planifiee de mise a jour (ouverture de session)'
 $syncLocal = Join-Path $dossierApp 'sync_startup.ps1'
 Copy-Item (Join-Path $PSScriptRoot 'sync_startup.ps1') $syncLocal -Force
 $action = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syncLocal`" -Role $Role"
-$res = schtasks /Create /F /TN 'CabinetCardio - mise a jour' /SC ONLOGON /TR $action /RL LIMITED 2>&1
-if ($LASTEXITCODE -eq 0) { Ok 'tache "CabinetCardio - mise a jour" creee' } else { Ko "tache planifiee non creee : $res" }
+# Sous PowerShell 5, "2>&1" avec ErrorActionPreference=Stop transforme le
+# moindre message d'erreur de schtasks ("Acces refuse"...) en arret du
+# script. Cette tache est un confort (mise a jour automatique a l'ouverture
+# de session) : son echec ne doit jamais interrompre l'installation.
+$prefAvant = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+$res = (& schtasks /Create /F /TN 'CabinetCardio - mise a jour' /SC ONLOGON /TR $action /RL LIMITED 2>&1 | Out-String).Trim()
+$codeTache = $LASTEXITCODE
+$ErrorActionPreference = $prefAvant
+if ($codeTache -eq 0) {
+    Ok 'tache "CabinetCardio - mise a jour" creee'
+} else {
+    Ko "tache planifiee non creee ($res) - sans consequence : la mise a jour se fait par le raccourci de deploiement"
+}
 
 # ---------------------------------------------------------------- 5. raccourcis clavier (medecin)
 if ($Role -eq 'Medecin' -and -not $SansRelais) {
