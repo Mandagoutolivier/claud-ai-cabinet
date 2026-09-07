@@ -13,6 +13,16 @@ Public Sub NouveauCourrier()
     On Error GoTo Erreur
     Dim pat As Object, cor As Object
     modLog.Etape "NouveauCourrier : lecture de la configuration (" & modConfig.Racine() & ")"
+    ' [COURRIER] SaisieRapide=1 : le courrier s'ouvre IMMEDIATEMENT, sans
+    ' choisir ni patient ni destinataire. Le medecin dicte le medecin traitant
+    ' (abreviation Dragon) dans le bloc adresse, et appelle l'identite du
+    ' patient par F6 / Ctrl+Alt+P, qui rattache alors le patient au document.
+    If modConfig.ConfigNum("COURRIER", "SaisieRapide", 1) = 1 Then
+        modLog.Etape "NouveauCourrier : saisie rapide"
+        CreerCourrierRapide
+        modLog.Etape "NouveauCourrier : termine"
+        Exit Sub
+    End If
     modLog.Etape "NouveauCourrier : choix du patient"
     Set pat = modPatient.ChoisirPatient()
     If pat Is Nothing Then Exit Sub
@@ -33,6 +43,77 @@ Erreur:
     MsgBox "Impossible de creer le courrier :" & vbCrLf & descErr & vbCrLf & vbCrLf & _
            "Etape : " & etapeErr & vbCrLf & "Source : " & srcErr & " (n° " & numErr & ")", vbExclamation, "Cabinet"
 End Sub
+
+' Courrier vide pret a la dictee : en-tete expediteur, date, appel et
+' politesse par defaut, signature ; bloc destinataire VIDE (curseur dedans).
+Public Function CreerCourrierRapide() As Document
+    Dim doc As Document, rng As Range
+    Set doc = CreerDepuisModele("LETTRE TYPE")
+    RemplirEnTeteSansDestinataire doc
+    PreparerStyleCorps doc
+    FigerChampsDate doc
+    doc.Variables("TypeCourrier") = "consultation"
+    ' curseur dans le bloc destinataire : le medecin dicte le medecin traitant
+    If doc.Bookmarks.Exists("DESTINATAIRE") Then
+        Set rng = doc.Bookmarks("DESTINATAIRE").Range
+        rng.Collapse wdCollapseStart
+        rng.Select
+    Else
+        PlacerCurseurCorps doc
+    End If
+    Set CreerCourrierRapide = doc
+End Function
+
+Private Sub RemplirEnTeteSansDestinataire(ByVal doc As Document)
+    Dim expediteur As String, signature As String
+    expediteur = modConfig.Config("MEDECIN", "Titre", "Docteur") & " " & _
+                 modConfig.Config("MEDECIN", "Prenom") & " " & modConfig.Config("MEDECIN", "Nom") & vbCr & _
+                 modConfig.Config("MEDECIN", "Specialite") & vbCr & _
+                 modConfig.Config("MEDECIN", "AdresseLigne1") & vbCr & _
+                 modConfig.Config("MEDECIN", "AdresseLigne2") & vbCr & _
+                 "Tel : " & modConfig.Config("MEDECIN", "Telephone")
+    signature = Replace(modConfig.Config("MEDECIN", "Signature", ""), "|", vbCr)
+    If Len(signature) = 0 Then
+        signature = modConfig.Config("MEDECIN", "Titre", "Docteur") & " " & _
+                    modConfig.Config("MEDECIN", "Prenom") & " " & modConfig.Config("MEDECIN", "Nom")
+    End If
+    RemplirSignet doc, "EXPEDITEUR", expediteur
+    ' un espace : un signet totalement vide disparait a la premiere frappe
+    RemplirSignet doc, "DESTINATAIRE", " "
+    MettreEnFormeDestinataire doc
+    RemplirSignet doc, "DATELIEU", modConfig.Config("GENERAL", "Ville") & ", le " & Format$(Date, "d mmmm yyyy")
+    RemplirSignet doc, "CONCERNE", ""
+    RemplirSignet doc, "APPEL", AppelParDefaut(False)
+    RemplirSignet doc, "POLITESSE", PolitesseParDefaut(False)
+    RemplirSignet doc, "SIGNATURE", signature
+End Sub
+
+' Le destinataire a ete dicte : on tente de le reconnaitre dans la base
+' (nom present dans le bloc adresse) pour le rattacher au document
+' (formules, lettres de demande, drapeau). Renvoie l'ID trouve ou "".
+Public Function ReconnaitreDestinataire(ByVal doc As Document) As String
+    Dim texte As String, cor As Object, nom As String, meilleur As Object
+    On Error Resume Next
+    If Not doc.Bookmarks.Exists("DESTINATAIRE") Then Exit Function
+    texte = modTexte.Plier(doc.Bookmarks("DESTINATAIRE").Range.Text)
+    If Len(Trim$(texte)) < 3 Then Exit Function
+    For Each cor In modBase.Correspondants()
+        nom = modTexte.Plier(cor("Nom"))
+        If Len(nom) >= 3 Then
+            If InStr(texte, nom) > 0 Then
+                If meilleur Is Nothing Then
+                    Set meilleur = cor
+                ElseIf Len(nom) > Len(modTexte.Plier(meilleur("Nom"))) Then
+                    Set meilleur = cor            ' le nom le plus long l'emporte (DUPONT vs DUPONT-MARTIN)
+                End If
+            End If
+        End If
+    Next cor
+    If Not meilleur Is Nothing Then
+        doc.Variables("CorrespondantID") = meilleur("ID")
+        ReconnaitreDestinataire = meilleur("ID")
+    End If
+End Function
 
 ' --- Creation sans interface (testable, reutilisee par les derivees) --
 Public Function CreerCourrierPour(ByVal pat As Object, ByVal cor As Object, _
@@ -157,11 +238,26 @@ End Function
 ' Le medecin ne dicte JAMAIS l'identite : elle est inseree depuis la base.
 Public Sub InsererPatient()
     On Error GoTo Erreur
-    Dim pat As Object
-    Set pat = modClaude.PatientDuDocument(ActiveDocument)
+    Dim pat As Object, doc As Document, rng As Range
+    Set doc = ActiveDocument
+    Set pat = modClaude.PatientDuDocument(doc)
     If pat Is Nothing Then
-        MsgBox "Ce document n'est pas rattache a un patient.", vbExclamation, "Cabinet"
-        Exit Sub
+        ' saisie rapide : c'est ICI que le patient est choisi et rattache
+        Set pat = modPatient.ChoisirPatient()
+        If pat Is Nothing Then Exit Sub
+        doc.Variables("PatientID") = pat("ID")
+        If Len(VariableDoc(doc, "TypeCourrier")) = 0 Then doc.Variables("TypeCourrier") = "consultation"
+        If doc.Bookmarks.Exists("CONCERNE") Then
+            RemplirSignet doc, "CONCERNE", "Concerne : " & modTexte.CiviliteCourte(pat("Sexe")) & " " & _
+                pat("Prenom") & " " & pat("Nom") & ", " & modTexte.NeLe(pat("Sexe")) & " " & pat("DDN")
+        End If
+    End If
+    ' l'identite va dans le CORPS : si le curseur est ailleurs (bloc adresse
+    ' apres la dictee du medecin traitant), on saute au debut du corps
+    If doc.Bookmarks.Exists("CORPS") Then
+        If Selection.Start < doc.Bookmarks("CORPS").Range.Start Or Selection.End > doc.Bookmarks("CORPS").Range.End Then
+            PlacerCurseurCorps doc
+        End If
     End If
     Selection.TypeText TexteIdentitePatient(pat)
     Exit Sub
@@ -303,6 +399,12 @@ Public Sub FigerChampsDate(ByVal doc As Document)
     Next story
     If Err.Number <> 0 Then modLog.LogErreur "FigerChampsDate : " & Err.Description
 End Sub
+
+Private Function VariableDoc(ByVal doc As Document, ByVal nom As String) As String
+    On Error Resume Next
+    VariableDoc = doc.Variables(nom).Value
+    Err.Clear
+End Function
 
 ' Depannage : resserrer le bloc adresse d'un courrier DEJA ouvert.
 ' Sans signet DESTINATAIRE, agit sur les paragraphes selectionnes.

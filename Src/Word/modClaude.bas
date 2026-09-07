@@ -207,11 +207,17 @@ Public Sub CorrigerCourrier()
     Set doc = ActiveDocument
     Set pat = PatientDuDocument(doc)
     If pat Is Nothing Then
-        MsgBox "Ce document n'est pas rattache a un patient (utilisez 'Nouveau courrier').", _
+        MsgBox "Ce document n'est pas rattache a un patient : appuyez sur F6 (ou Ctrl+Alt+P) pour le choisir.", _
                vbExclamation, "Cabinet"
         Exit Sub
     End If
     Set cor = CorrespondantDuDocument(doc)
+    If cor Is Nothing Then
+        On Error Resume Next
+        modCourrier.ReconnaitreDestinataire doc
+        Set cor = CorrespondantDuDocument(doc)
+        On Error GoTo Erreur
+    End If
 
     corps = modCourrier.RecupererCorps(doc)
     If Len(Trim$(corps)) < 10 Then

@@ -54,8 +54,14 @@ Public Function ValiderDocument(ByVal doc As Document, ByVal silencieux As Boole
     Dim d As Object, typeCourrier As String, consultationID As String, dateActe As String
 
     Set pat = modClaude.PatientDuDocument(doc)
-    If pat Is Nothing Then Err.Raise vbObjectError + 520, "modValidation", "Document sans patient rattache."
+    If pat Is Nothing Then Err.Raise vbObjectError + 520, "modValidation", _
+        "Document sans patient rattache : appuyez sur F6 (ou Ctrl+Alt+P) pour choisir le patient, puis validez."
     Set cor = modClaude.CorrespondantDuDocument(doc)
+    If cor Is Nothing Then
+        ' destinataire dicte (saisie rapide) : reconnu dans la base si possible
+        If Len(modCourrier.ReconnaitreDestinataire(doc)) > 0 Then Set cor = modClaude.CorrespondantDuDocument(doc)
+        modCourrier.MettreEnFormeDestinataire doc
+    End If
 
     typeCourrier = VariableDoc(doc, "TypeCourrier")
     If Len(typeCourrier) = 0 Then typeCourrier = "courrier"

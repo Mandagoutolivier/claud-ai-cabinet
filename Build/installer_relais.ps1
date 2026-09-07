@@ -41,6 +41,7 @@ try {
         @{ k = 67;  m = 'CAB_CorrigerCourrier'; maj = $true },  # Ctrl+Alt+Maj+C
         @{ k = 68;  m = 'CAB_LettreDerivee' },     # Ctrl+Alt+D
         @{ k = 80;  m = 'CAB_InsererPatient' },    # Ctrl+Alt+P
+        @{ k = 117; m = 'CAB_InsererPatient'; brut = $true },   # F6
         @{ k = 71;  m = 'CAB_EnvoyerECG' },        # Ctrl+Alt+G
         @{ k = 86;  m = 'CAB_ValiderCourrier' },   # Ctrl+Alt+V
         @{ k = 66;  m = 'CAB_MettreEnGras' },      # Ctrl+Alt+B
@@ -51,7 +52,7 @@ try {
         if ($ancien.Command -match 'CAB_CorrigerCourrier') { $ancien.Clear(); Write-Host '  Ctrl+Alt+C libere (rendu a l''ancien complement)' }
     } catch {}
     foreach ($l in $liaisons) {
-        $code = 512 + 1024 + $l.k
+        if ($l.brut) { $code = $l.k } else { $code = 512 + 1024 + $l.k }
         if ($l.maj) { $code += 256 }   # wdKeyShift
         try { $word.FindKey($code).Clear() } catch {}
         [void]$word.KeyBindings.Add(2, [string]$l.m, $code)

@@ -99,6 +99,17 @@ enregistrements. Testez-le vraiment (renommez le dossier `Base` une seconde).
 | 5b.7 | « Tableau de bord » | facturé / encaissé / reste par mois, et par acte ; les totaux recoupent le journal |
 | 5b.8 | Vérifier qu'aucune de ces actions n'a créé de ligne au journal | seules les colonnes MontantRegle, DateEncaissement, Paye, RelanceLe, ChequeRemisLe bougent |
 
+## 5 ter. Dictée rapide (poste médecin)
+
+| # | Ce qu'on fait | Attendu |
+|---|---|---|
+| 5t.1 | Ctrl+Alt+N | courrier ouvert immédiatement, aucune liste ; curseur dans le bloc adresse vide |
+| 5t.2 | Dicter l'abréviation Dragon du médecin traitant | bloc adresse rempli |
+| 5t.3 | F6 | liste des patients ; après choix, identité insérée au début du corps, curseur dans le corps |
+| 5t.4 | Dicter, Ctrl+Alt+Maj+C | correction lancée (le patient est rattaché) ; Ctrl+Alt+C lance l'ANCIEN logiciel |
+| 5t.5 | Ctrl+Alt+V | validation ; si le nom dicté est dans la base, le correspondant est reconnu (formules, lettres de demande) ; bloc adresse resserré et en gras |
+| 5t.6 | Ctrl+Alt+V sans avoir fait F6 | refus explicite « appuyez sur F6 » |
+
 ## 6. Lettres de demande
 
 `[DERIVEES] AutoValider=0` : les demandes sont produites **en brouillon**.

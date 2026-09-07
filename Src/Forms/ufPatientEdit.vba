@@ -40,19 +40,55 @@ Private Sub ChargerCombos()
     cmbSexe.Clear
     cmbSexe.AddItem "M"
     cmbSexe.AddItem "F"
+    ' Medecins traitants : tries par NOM, libelle "NOM Prenom - Ville" pour
+    ' que les premieres lettres tapees dans la liste tombent sur le nom
+    ' (MatchEntry = complete : la saisie se complete au fur et a mesure).
     cmbMed.Clear
     cmbMed.AddItem "(aucun)"
-    Set cors = modBaseIO.LireTableX(modConfig.FichierPatients(), "CORRESPONDANTS")
+    Set cors = TrierParNom(modBaseIO.LireTableX(modConfig.FichierPatients(), "CORRESPONDANTS"))
     ReDim mIDsMedecins(0 To cors.Count)
     mIDsMedecins(0) = ""
     i = 1
     For Each c In cors
-        cmbMed.AddItem c("Titre") & " " & c("Nom") & " " & c("Prenom") & " (" & c("Ville") & ")"
+        cmbMed.AddItem UCase$(Trim$(c("Nom"))) & " " & Trim$(c("Prenom")) & IIf(Len(Trim$(c("Ville"))) > 0, " - " & Trim$(c("Ville")), "")
         mIDsMedecins(i) = c("ID")
         i = i + 1
     Next c
     cmbMed.ListIndex = 0
 End Sub
+
+' Correspondants actifs, tries par Nom puis Prenom (insertion triee)
+Private Function TrierParNom(ByVal cors As Collection) As Collection
+    Dim res As Collection, c As Object, i As Long, cle As String, inserted As Boolean
+    Set res = New Collection
+    For Each c In cors
+        If c("Actif") <> "0" Then
+            cle = UCase$(Trim$(c("Nom")) & " " & Trim$(c("Prenom")))
+            inserted = False
+            For i = 1 To res.Count
+                If UCase$(Trim$(res(i)("Nom")) & " " & Trim$(res(i)("Prenom"))) > cle Then
+                    res.Add c, , i: inserted = True: Exit For
+                End If
+            Next i
+            If Not inserted Then res.Add c
+        End If
+    Next c
+    Set TrierParNom = res
+End Function
+
+' Texte tape sans selection dans la liste : on retrouve l'entree qui commence
+' par ce texte (premieres lettres du nom) ; sinon on refuse d'enregistrer.
+Private Function IndexMedecinSaisi() As Long
+    Dim i As Long, t As String
+    IndexMedecinSaisi = cmbMed.ListIndex
+    If IndexMedecinSaisi >= 0 Then Exit Function
+    t = UCase$(Trim$(cmbMed.Text))
+    If Len(t) = 0 Then IndexMedecinSaisi = 0: Exit Function
+    For i = 1 To cmbMed.ListCount - 1
+        If Left$(UCase$(cmbMed.List(i)), Len(t)) = t Then IndexMedecinSaisi = i: Exit Function
+    Next i
+    IndexMedecinSaisi = -1
+End Function
 
 Private Sub SelectionnerMedecin(ByVal id As String)
     Dim i As Long
@@ -97,7 +133,15 @@ Private Sub btnOK_Click()
     d("Tel") = Trim$(txtTel.Text)
     d("Mobile") = Trim$(txtMobile.Text)
     d("Email") = Trim$(txtEmail.Text)
-    If cmbMed.ListIndex >= 0 Then d("MedTraitantID") = mIDsMedecins(cmbMed.ListIndex)
+    Dim iMed As Long
+    iMed = IndexMedecinSaisi()
+    If iMed < 0 Then
+        MsgBox "Medecin traitant introuvable : '" & cmbMed.Text & "'. Tapez les premieres lettres du NOM et choisissez dans la liste.", _
+               vbExclamation, "Cabinet"
+        cmbMed.SetFocus
+        Exit Sub
+    End If
+    d("MedTraitantID") = mIDsMedecins(iMed)
     d("Mutuelle") = Trim$(txtMutuelle.Text)
     d("ALD") = IIf(chkALD.Value, "O", "")
     d("Notes") = Trim$(txtNotes.Text)

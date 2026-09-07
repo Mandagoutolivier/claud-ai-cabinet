@@ -9,8 +9,8 @@ Option Explicit
 
 Public Sub AideCabinet()
     MsgBox "Commandes du cabinet :" & vbCrLf & vbCrLf & _
-           "Ctrl+Alt+N  -  Nouveau courrier (choix du patient)" & vbCrLf & _
-           "Ctrl+Alt+P  -  Inserer l'identite du patient (nom + age) au curseur" & vbCrLf & _
+           "Ctrl+Alt+N  -  Nouveau courrier vide (dictez le medecin traitant, F6 pour le patient)" & vbCrLf & _
+           "F6 ou Ctrl+Alt+P  -  Choisir/inserer le patient (nom + age) dans le corps" & vbCrLf & _
            "Ctrl+Alt+Maj+C  -  Corriger le courrier dicte (IA)" & vbCrLf & _
            "Ctrl+Alt+D  -  Lettre derivee (demande d'examen ou d'avis)" & vbCrLf & _
            "Ctrl+Alt+G  -  Envoyer l'identite au poste ECG (Resting12Lead)" & vbCrLf & _
@@ -71,6 +71,10 @@ Private Sub InstallerRaccourcisSession(ByVal verbeux As Boolean)
         KeyBindings.Add wdKeyCategoryMacro, macros(i), code
         If Err.Number = 0 Then repares = repares + 1 Else modLog.LogErreur "raccourci " & macros(i) & " : " & Err.Description
     Next i
+    ' F6 = identite du patient (meme macro que Ctrl+Alt+P, plus rapide a la dictee)
+    Err.Clear
+    KeyBindings.Add wdKeyCategoryMacro, "InsererPatient", BuildKeyCode(wdKeyF6)
+    If Err.Number = 0 Then repares = repares + 1
     modele.Saved = True          ' aucune invite d'enregistrement du modele
     If verbeux Then MsgBox "Raccourcis verifies : " & repares & " reinstalle(s) (Ctrl+Alt+N/D/P/G/V/B, Ctrl+Alt+Maj+C).", vbInformation, "Cabinet"
     modLog.LogInfo "Raccourcis (re)poses : " & repares & "/7"

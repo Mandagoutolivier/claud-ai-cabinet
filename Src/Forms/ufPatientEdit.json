@@ -30,7 +30,7 @@
     { "type": "Label",   "name": "lblEmail",    "left": 12,  "top": 248, "width": 92,  "height": 18, "caption": "Email", "fontsize": 10 },
     { "type": "TextBox", "name": "txtEmail",    "left": 110, "top": 246, "width": 330, "height": 20, "fontsize": 10 },
     { "type": "Label",   "name": "lblMed",      "left": 12,  "top": 274, "width": 92,  "height": 18, "caption": "Médecin traitant", "fontsize": 10 },
-    { "type": "ComboBox","name": "cmbMed",      "left": 110, "top": 272, "width": 330, "height": 20, "fontsize": 10, "style": 2 },
+    { "type": "ComboBox","name": "cmbMed",      "left": 110, "top": 272, "width": 330, "height": 20, "fontsize": 10, "style": 0, "MatchEntry": 1, "AutoWordSelect": false },
     { "type": "Label",   "name": "lblMutuelle", "left": 12,  "top": 300, "width": 92,  "height": 18, "caption": "Mutuelle", "fontsize": 10 },
     { "type": "TextBox", "name": "txtMutuelle", "left": 110, "top": 298, "width": 330, "height": 20, "fontsize": 10 },
     { "type": "CheckBox","name": "chkALD",      "left": 110, "top": 326, "width": 200, "height": 18, "caption": "Patient en ALD", "fontsize": 10 },

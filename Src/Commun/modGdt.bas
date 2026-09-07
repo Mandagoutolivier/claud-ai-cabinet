@@ -46,6 +46,15 @@ Public Function ConstruireGdt(ByVal pat As Object) As String
     lignes.Add LigneGdt("3101", UCase$(pat("Nom")))
     lignes.Add LigneGdt("3102", pat("Prenom"))
     lignes.Add LigneGdt("3103", DdnVersGdt(pat("DDN")))
+    ' 3110 sexe (1 = masculin, 2 = feminin) : utile aux normes ECG, et donne
+    ' au logiciel ECG une fiche complete des l'import
+    If pat.Exists("Sexe") Then
+        If UCase$(Left$(pat("Sexe"), 1)) = "F" Then
+            lignes.Add LigneGdt("3110", "2")
+        ElseIf UCase$(Left$(pat("Sexe"), 1)) = "M" Then
+            lignes.Add LigneGdt("3110", "1")
+        End If
+    End If
     lignes.Add LigneGdt("8402", modConfig.Config("ECG", "CodeExamen", "EKG01"))
 
     ' champ 8100 = longueur totale, sa propre ligne comprise (14 octets)

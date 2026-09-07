@@ -177,16 +177,17 @@ function Build-Word {
                 @{ k = 67;  m = 'CorrigerCourrier'; maj = $true },   # Ctrl+Alt+Maj+C
                 @{ k = 68;  m = 'LettreDerivee' },      # Ctrl+Alt+D
                 @{ k = 80;  m = 'InsererPatient' },     # Ctrl+Alt+P
+                @{ k = 117; m = 'InsererPatient'; brut = $true },   # F6 (identite du patient)
                 @{ k = 71;  m = 'EnvoyerECG' },         # Ctrl+Alt+G
                 @{ k = 86;  m = 'ValiderCourrier' },    # Ctrl+Alt+V
                 @{ k = 66;  m = 'MettreEnGras' },       # Ctrl+Alt+B
                 @{ k = 123; m = 'SondeRaccourci' })) {  # Ctrl+Alt+F12 (test fonctionnel)
-            $code = 512 + 1024 + $kb.k
+            if ($kb.brut) { $code = $kb.k } else { $code = 512 + 1024 + $kb.k }
             if ($kb.maj) { $code += 256 }   # wdKeyShift
             try { [void]$word.KeyBindings.Add(2, [string]$kb.m, $code) } catch { Write-Warning "raccourci $($kb.m) non pose" }
         }
         foreach ($b in @($word.KeyBindings)) {
-            if ($b.KeyString -match 'Ctrl') { Write-Host "  raccourci $($b.KeyString) -> $($b.Command)" }
+            if ($b.KeyString -match 'Ctrl|F6') { Write-Host "  raccourci $($b.KeyString) -> $($b.Command)" }
         }
         $doc.Save()
         $doc.Close(0)
@@ -279,13 +280,20 @@ function Build-Excel {
         foreach ($f in @($manifest.excel.feuilles)) {
             $wsF = $wb.Worksheets.Add([Type]::Missing, $wb.Worksheets.Item($wb.Worksheets.Count))
             $wsF.Name = [string]$f.nom
-            $wsF.Rows.Item(1).RowHeight = 30
-            $left = 10.0
+            # boutons par rangees de 5 (au-dela, une 2e rangee dans la meme
+            # ligne 1, dont la hauteur est doublee : la grille commence ligne 2)
+            $parRangee = 5
+            $nb = @($f.boutons).Count
+            $rangees = [math]::Ceiling($nb / $parRangee)
+            $wsF.Rows.Item(1).RowHeight = 4.0 + 28.0 * [math]::Max(1, $rangees)
+            $i = 0
             foreach ($b in @($f.boutons)) {
-                $btn = $wsF.Buttons().Add($left, 4.0, 150.0, 24.0)
+                $left = 10.0 + 158.0 * ($i % $parRangee)
+                $top = 4.0 + 28.0 * [math]::Floor($i / $parRangee)
+                $btn = $wsF.Buttons().Add($left, $top, 150.0, 24.0)
                 $btn.Text = [string]$b.texte
                 $btn.OnAction = [string]$b.macro
-                $left += 158.0
+                $i++
             }
             if ($f.code) {
                 $codePath = Join-Path $SrcRoot (([string]$f.code) -replace '/', '\')
