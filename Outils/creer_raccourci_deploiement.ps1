@@ -29,7 +29,7 @@ $copieNas = Join-Path $Nas 'CabinetCardio-Git\Outils\deployer_cabinet.ps1'
 # sur GitHub sera prise en compte automatiquement, sans regenerer le lnk.
 $commande = @"
 `$ErrorActionPreference='Stop'; `$d=Join-Path `$env:TEMP 'deployer_cabinet.ps1';
-try { Invoke-WebRequest -UseBasicParsing '$urlBrute' -OutFile `$d }
+try { Invoke-WebRequest -UseBasicParsing ('$urlBrute' + '?nocache=' + (Get-Date -Format yyyyMMddHHmmss)) -OutFile `$d }
 catch {
   Write-Host 'Internet indisponible : reprise de la copie du NAS (verifiez sa fraicheur).' -ForegroundColor Yellow
   Copy-Item '$copieNas' `$d -Force

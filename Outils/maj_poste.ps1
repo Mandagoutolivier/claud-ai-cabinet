@@ -27,6 +27,7 @@ param(
 $ErrorActionPreference = 'Stop'
 # Lance par raccourci, PowerShell fermerait la fenetre sur une erreur avant
 # qu'on ait pu la lire : on l'affiche et on attend une touche.
+try { Start-Transcript -Path (Join-Path $env:TEMP 'maj_poste.log') -Force | Out-Null } catch {}
 trap {
     Write-Host ''
     Write-Host "ARRET : $($_.Exception.Message)" -ForegroundColor Red

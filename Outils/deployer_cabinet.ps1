@@ -27,6 +27,8 @@ param(
 $ErrorActionPreference = 'Stop'
 # Lance par raccourci, PowerShell fermerait la fenetre sur une erreur avant
 # qu'on ait pu la lire : on l'affiche et on attend une touche.
+# Trace complete dans %TEMP%\deployer_cabinet.log, meme si la fenetre se ferme
+try { Start-Transcript -Path (Join-Path $env:TEMP 'deployer_cabinet.log') -Force | Out-Null } catch {}
 trap {
     Write-Host ''
     Write-Host "ARRET : $($_.Exception.Message)" -ForegroundColor Red
