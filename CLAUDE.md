@@ -10,11 +10,15 @@
    fermer Word et Excel, double-cliquer.
 3. Le raccourci télécharge toujours la DERNIÈRE version depuis GitHub au
    moment du clic — inutile de le régénérer après une future correction.
-4. Il installe automatiquement le poste médecin (racine `\\RDC\CabinetCardio`)
-   et tente une installation à distance sur RDC (secrétariat). Si cette
-   tentative échoue (réseau/pare-feu du cabinet), le bilan final l'indique
-   clairement et demande de double-cliquer une fois, depuis RDC lui-même,
-   sur `\\RDC\CabinetCardio\_Installation\installer_secretariat.cmd`.
+4. Il installe automatiquement le poste médecin (racine
+   `\\ACCUEIL\CabinetCardio` — le PC secrétariat s'appelle ACCUEIL, pas RDC)
+   et tente une installation à distance sur ACCUEIL. Si cette tentative
+   échoue (réseau/pare-feu du cabinet), le bilan final l'indique clairement
+   et demande de double-cliquer une fois, depuis ACCUEIL lui-même, sur
+   `\\ACCUEIL\CabinetCardio\_Installation\installer_secretariat.cmd`.
+5. Poste secrétariat ACCUEIL installé le 06/09/2026 (installer_cabinet.ps1
+   -Role Secretaire, partage créé). Base patients à recopier depuis
+   `\\DS224\home\claude\install\Donnees\Base\Patients.xlsx`.
 
 Une fois ce déploiement fait et vérifié, effacer cette section (ou la
 remplacer par le prochain point en cours).

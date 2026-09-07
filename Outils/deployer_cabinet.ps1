@@ -18,8 +18,11 @@ param(
     [string]$Nas               = '\\DS224\home\claude\claude ai',
     [string]$Depot             = 'https://github.com/Mandagoutolivier/claud-ai-cabinet.git',
     [string]$Branche           = 'claude/suivi-dev-logiciel-cabinet-fdjpa9',
-    [string]$RacineMedecin     = '\\RDC\CabinetCardio',
-    [string]$PosteSecretariat  = 'RDC',
+    # Poste secretariat : nom Windows du PC (bilan de l'installateur :
+    # "partage cree : \\ACCUEIL\CabinetCardio"). Plusieurs candidats acceptes,
+    # separes par ; - le premier qui repond est retenu.
+    [string]$PosteSecretariat  = 'ACCUEIL;RDC',
+    [string]$RacineMedecin     = '',
     [string]$RacineSecretariat = 'C:\CabinetCardio',
     [switch]$SansConstruction,           # reutilise les modeles deja construits
     [switch]$SansSecretariat             # ne touche pas au poste RDC
@@ -128,8 +131,19 @@ if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
     throw "git introuvable sur ce poste. Installez Git pour Windows puis relancez."
 }
 Ok 'git present'
+# choix du poste secretariat parmi les candidats
+$candidats = $PosteSecretariat -split ';' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+if (-not $RacineMedecin) {
+    foreach ($c in $candidats) {
+        if (Test-Path "\\$c\CabinetCardio") { $PosteSecretariat = $c; $RacineMedecin = "\\$c\CabinetCardio"; break }
+    }
+    if (-not $RacineMedecin) { $PosteSecretariat = $candidats[0]; $RacineMedecin = "\\$($candidats[0])\CabinetCardio" }
+} else {
+    $PosteSecretariat = ($RacineMedecin -replace '^\\\\', '') -replace '\\.*$', ''
+}
 if (-not (Test-Path $RacineMedecin)) {
-    throw ("Racine du secretariat inaccessible : $RacineMedecin`n" +
+    throw ("Racine du secretariat inaccessible : $RacineMedecin (candidats testes : $($candidats -join ', '))`n" +
+           "Le poste secretariat est-il INSTALLE (installer_cabinet.ps1 -Role Secretaire sur ce PC) et allume ?`n" +
            "Ce script se lance AU CABINET, sur le poste medecin, avec le PC $PosteSecretariat allume et son dossier partage.`n" +
            "Depuis le domicile, utilisez maj_poste.ps1 (mise a jour du NAS et de ce poste seulement).")
 }
