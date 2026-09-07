@@ -45,15 +45,20 @@ Public Function ConstruireGdt(ByVal pat As Object) As String
     lignes.Add LigneGdt("3000", pat("ID"))
     lignes.Add LigneGdt("3101", UCase$(pat("Nom")))
     lignes.Add LigneGdt("3102", pat("Prenom"))
-    lignes.Add LigneGdt("3103", DdnVersGdt(pat("DDN")))
+    Dim ddn As String, sexe As String
+    ddn = DdnVersGdt(pat("DDN"))
+    If Len(ddn) > 0 Then
+        lignes.Add LigneGdt("3103", ddn)
+    Else
+        modLog.LogErreur "GDT " & pat("ID") & " : date de naissance absente ou illisible ('" & pat("DDN") & "') - a completer dans la fiche"
+    End If
     ' 3110 sexe (1 = masculin, 2 = feminin) : utile aux normes ECG, et donne
     ' au logiciel ECG une fiche complete des l'import
-    If pat.Exists("Sexe") Then
-        If UCase$(Left$(pat("Sexe"), 1)) = "F" Then
-            lignes.Add LigneGdt("3110", "2")
-        ElseIf UCase$(Left$(pat("Sexe"), 1)) = "M" Then
-            lignes.Add LigneGdt("3110", "1")
-        End If
+    sexe = SexeVersGdt(pat)
+    If Len(sexe) > 0 Then
+        lignes.Add LigneGdt("3110", sexe)
+    Else
+        modLog.LogErreur "GDT " & pat("ID") & " : sexe absent ou illisible - a completer dans la fiche"
     End If
     lignes.Add LigneGdt("8402", modConfig.Config("ECG", "CodeExamen", "EKG01"))
 
@@ -77,13 +82,41 @@ Private Function LigneGdt(ByVal champ As String, ByVal valeur As String) As Stri
     LigneGdt = Format$(Len(champ & valeur) + 5, "000") & champ & valeur
 End Function
 
-' "01/01/1935" -> "01011935"
+' Date de naissance -> JJMMAAAA. Tolere "01/01/1935", "1/1/35", "1935-01-01",
+' "01.01.1935" et un numero de serie Excel ; "" si illisible.
 Private Function DdnVersGdt(ByVal ddn As String) As String
-    Dim p() As String
-    p = Split(Trim$(ddn), "/")
+    Dim p() As String, t As String, d As Date, a As Long
+    t = Trim$(ddn)
+    If Len(t) = 0 Then Exit Function
+    t = Replace(Replace(t, ".", "/"), "-", "/")
+    p = Split(t, "/")
+    On Error Resume Next
     If UBound(p) = 2 Then
-        DdnVersGdt = Format$(Val(p(0)), "00") & Format$(Val(p(1)), "00") & Format$(Val(p(2)), "0000")
-    Else
-        DdnVersGdt = ""
+        If Len(p(0)) = 4 Then                     ' AAAA/MM/JJ
+            d = DateSerial(Val(p(0)), Val(p(1)), Val(p(2)))
+        Else                                      ' JJ/MM/AAAA ou JJ/MM/AA
+            a = Val(p(2))
+            If a < 100 Then a = a + IIf(a > Year(Date) Mod 100, 1900, 2000)
+            d = DateSerial(a, Val(p(1)), Val(p(0)))
+        End If
+    ElseIf IsNumeric(t) Then                      ' numero de serie Excel
+        d = CDate(Val(t))
+    ElseIf IsDate(t) Then
+        d = CDate(t)
     End If
+    On Error GoTo 0
+    If d = 0 Or Year(d) < 1880 Or d > Date Then Exit Function
+    DdnVersGdt = Format$(d, "ddmmyyyy")
+End Function
+
+' Sexe de la fiche -> code GDT : M/H/1/Masculin/Homme -> 1, F/2/Feminin/Femme -> 2
+Private Function SexeVersGdt(ByVal pat As Object) As String
+    Dim v As String
+    If Not pat.Exists("Sexe") Then Exit Function
+    v = UCase$(Trim$(pat("Sexe")))
+    If Len(v) = 0 Then Exit Function
+    Select Case Left$(v, 1)
+        Case "M", "H", "1": SexeVersGdt = "1"
+        Case "F", "2":      SexeVersGdt = "2"
+    End Select
 End Function

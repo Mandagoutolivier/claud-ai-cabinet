@@ -166,6 +166,55 @@ Erreur:
     MsgBox "Erreur : " & Err.Description, vbCritical, "Cabinet"
 End Sub
 
+' Fiches patients incompletes pour l'ECG (date de naissance / sexe) : liste
+' dans une feuille "Controle" pour completer au fil de l'eau.
+Public Sub UI_ControleFiches()
+    On Error GoTo Erreur
+    Dim p As Object, ws As Worksheet, r As Long, nDdn As Long, nSexe As Long, valeurs As Object, k As Variant
+    Set valeurs = CreateObject("Scripting.Dictionary")
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("Controle")
+    On Error GoTo Erreur
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
+        ws.Name = "Controle"
+    End If
+    ws.Cells.Clear
+    ws.Cells(1, 1).Value = "Fiches incompletes pour l'ECG (date de naissance ou sexe) - " & Format$(Now, "dd/mm/yyyy hh:nn")
+    ws.Cells(1, 1).Font.Bold = True
+    ws.Cells(3, 1).Value = "ID": ws.Cells(3, 2).Value = "Nom": ws.Cells(3, 3).Value = "Prenom"
+    ws.Cells(3, 4).Value = "DDN": ws.Cells(3, 5).Value = "Sexe": ws.Cells(3, 6).Value = "Probleme"
+    ws.Range("A3:F3").Font.Bold = True
+    ws.Columns(4).NumberFormat = "@"
+    r = 4
+    For Each p In modBaseIO.LireTableX(modConfig.FichierPatients(), "PATIENTS")
+        Dim pb As String, sx As String
+        pb = ""
+        sx = UCase$(Trim$(p("Sexe")))
+        valeurs(sx) = valeurs(sx) + 1
+        If Not modTexte.DateFrValide(Trim$(p("DDN"))) Then pb = "date de naissance": nDdn = nDdn + 1
+        If Len(sx) = 0 Or (Left$(sx, 1) <> "M" And Left$(sx, 1) <> "F" And Left$(sx, 1) <> "H") Then
+            pb = pb & IIf(Len(pb) > 0, " + ", "") & "sexe": nSexe = nSexe + 1
+        End If
+        If Len(pb) > 0 Then
+            ws.Cells(r, 1).Value = p("ID"): ws.Cells(r, 2).Value = p("Nom"): ws.Cells(r, 3).Value = p("Prenom")
+            ws.Cells(r, 4).Value = p("DDN"): ws.Cells(r, 5).Value = p("Sexe"): ws.Cells(r, 6).Value = pb
+            r = r + 1
+        End If
+    Next p
+    ws.Cells(2, 1).Value = (r - 4) & " fiche(s) a completer : " & nDdn & " sans date de naissance valide, " & nSexe & " sans sexe (M/F)."
+    r = r + 1
+    ws.Cells(r, 1).Value = "Valeurs rencontrees dans la colonne Sexe :": r = r + 1
+    For Each k In valeurs.Keys
+        ws.Cells(r, 1).Value = IIf(Len(k) = 0, "(vide)", k): ws.Cells(r, 2).Value = valeurs(k): r = r + 1
+    Next k
+    ws.Columns("A:F").AutoFit
+    ws.Activate
+    Exit Sub
+Erreur:
+    MsgBox "Erreur : " & Err.Description, vbCritical, "Cabinet"
+End Sub
+
 Public Sub UI_OuvrirJournal()
     modJournal.OuvrirJournal
 End Sub

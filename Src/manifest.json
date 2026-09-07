@@ -84,7 +84,8 @@
       { "texte": "Correspondants",       "macro": "UI_Correspondants" },
       { "texte": "Honoraires et encaissements", "macro": "UI_Honoraires" },
       { "texte": "Journal des actes",    "macro": "UI_OuvrirJournal" },
-      { "texte": "Calage imprimante CERFA", "macro": "UI_CalageCerfa" }
+      { "texte": "Calage imprimante CERFA", "macro": "UI_CalageCerfa" },
+      { "texte": "Controle des fiches (ECG)", "macro": "UI_ControleFiches" }
     ]
   }
 }
