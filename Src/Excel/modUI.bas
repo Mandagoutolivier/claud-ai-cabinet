@@ -66,7 +66,14 @@ Public Sub UI_ArriveePatient()
         For Each p In modBaseIO.LireTableX(modConfig.FichierPatients(), "PATIENTS")
             If p("ID") = r("PatientID") Then
                 modGdt.EcrireGdtPatient p
-                If Err.Number = 0 Then noteEcg = vbCrLf & "Identite envoyee a l'ECG."
+                If Err.Number = 0 Then
+                    noteEcg = vbCrLf & "Identite envoyee a l'ECG."
+                Else
+                    noteEcg = vbCrLf & "ATTENTION : identite NON envoyee a l'ECG - " & Err.Description & vbCrLf & _
+                              "(verifier [ECG] DossierGdt dans Config\config.ini : chemin reseau vers le PC de l'ECG)"
+                    modLog.LogErreur "Envoi ECG (arrivee) : " & Err.Description
+                    Err.Clear
+                End If
                 Exit For
             End If
         Next p

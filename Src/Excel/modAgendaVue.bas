@@ -784,6 +784,13 @@ Private Sub ExecuterAction(ByVal rdvs As Collection, ByVal rdvID As String, ByVa
             If Len(modConfig.Config("ECG", "DossierGdt", "")) > 0 And mPatients.Exists(r("PatientID")) Then
                 On Error Resume Next
                 modGdt.EcrireGdtPatient mPatients(r("PatientID"))
+                If Err.Number <> 0 Then
+                    modLog.LogErreur "Envoi ECG (arrivee agenda) : " & Err.Description
+                    MsgBox "Arrivee enregistree, mais identite NON envoyee a l'ECG :" & vbCrLf & Err.Description & vbCrLf & vbCrLf & _
+                           "Verifiez [ECG] DossierGdt dans Config\config.ini (chemin reseau vers le PC de l'ECG).", _
+                           vbExclamation, "Cabinet - ECG"
+                    Err.Clear
+                End If
                 On Error GoTo 0
             End If
         Case "ABSENT": modAgenda.MarquerStatut rdvID, "Absent", annee
