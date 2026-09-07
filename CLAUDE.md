@@ -2,26 +2,23 @@
 
 ## 📌 Pense-bête en cours
 
-**Déploiement au cabinet prévu lundi.** Récapitulatif (à jour au 06/09/2026) :
+**Déploiement du 07/09/2026 — état :**
 
-1. Raccourci déjà déposé sur le NAS :
-   `\\DS224\home\claude\claude ai\Deploiement-Cabinet\Deployer le cabinet.lnk`
-2. Au cabinet, lundi : copier ce `.lnk` sur le Bureau du PC médecin (AX8MAX),
-   fermer Word et Excel, double-cliquer.
-3. Le raccourci télécharge toujours la DERNIÈRE version depuis GitHub au
-   moment du clic — inutile de le régénérer après une future correction.
-4. Il installe automatiquement le poste médecin (racine
-   `\\ACCUEIL\CabinetCardio` — le PC secrétariat s'appelle ACCUEIL, pas RDC)
-   et tente une installation à distance sur ACCUEIL. Si cette tentative
-   échoue (réseau/pare-feu du cabinet), le bilan final l'indique clairement
-   et demande de double-cliquer une fois, depuis ACCUEIL lui-même, sur
-   `\\ACCUEIL\CabinetCardio\_Installation\installer_secretariat.cmd`.
-5. Poste secrétariat ACCUEIL installé le 06/09/2026 (installer_cabinet.ps1
-   -Role Secretaire, partage créé). Base patients à recopier depuis
-   `\\DS224\home\claude\install\Donnees\Base\Patients.xlsx`.
+- Poste médecin (AX8_Max) : déployé par le raccourci « Deployer le cabinet »
+  (version f06572f), racine `\\ACCUEIL\CabinetCardio`, relais Ctrl+Alt+…
+  testé OK, clé API présente. Tâche planifiée refusée (sans conséquence).
+- Poste secrétariat ACCUEIL : installé le 07/09 (partage créé), données de
+  l'ancien poste RDC rapatriées (agenda, journal, dossiers). **Reste à faire
+  une fois** : double-cliquer, depuis ACCUEIL, Word/Excel fermés,
+  `\\ACCUEIL\CabinetCardio\_Installation\installer_secretariat.cmd`
+  pour y mettre le dernier `Cabinet.xlsm` (agenda mois, honoraires).
+  L'installation à distance (WinRM) ne passe pas au cabinet : c'est normal.
+- Ancien poste RDC : à neutraliser (renommer `C:\CabinetCardio`) pour éviter
+  deux agendas.
+- Ensuite : recette `RECETTE_AUDIT.md` (chapitres 2, 4, 5 bis) avant usage
+  réel du circuit financier.
 
-Une fois ce déploiement fait et vérifié, effacer cette section (ou la
-remplacer par le prochain point en cours).
+Mettre à jour cette section au fil de l'eau ; l'effacer quand tout est vérifié.
 
 ## Le projet
 

@@ -158,7 +158,7 @@ $action = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden
 # de session) : son echec ne doit jamais interrompre l'installation.
 $prefAvant = $ErrorActionPreference
 $ErrorActionPreference = 'Continue'
-$res = (& schtasks /Create /F /TN 'CabinetCardio - mise a jour' /SC ONLOGON /TR $action /RL LIMITED 2>&1 | Out-String).Trim()
+$res = ((& schtasks /Create /F /TN 'CabinetCardio - mise a jour' /SC ONLOGON /TR $action /RL LIMITED 2>&1 | ForEach-Object { $_.ToString() }) -join ' ').Trim()
 $codeTache = $LASTEXITCODE
 $ErrorActionPreference = $prefAvant
 if ($codeTache -eq 0) {
