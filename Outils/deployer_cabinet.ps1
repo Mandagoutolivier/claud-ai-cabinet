@@ -25,6 +25,15 @@ param(
     [switch]$SansSecretariat             # ne touche pas au poste RDC
 )
 $ErrorActionPreference = 'Stop'
+# Lance par raccourci, PowerShell fermerait la fenetre sur une erreur avant
+# qu'on ait pu la lire : on l'affiche et on attend une touche.
+trap {
+    Write-Host ''
+    Write-Host "ARRET : $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ''
+    Read-Host 'Appuyez sur Entree pour fermer cette fenetre'
+    exit 1
+}
 [System.Threading.Thread]::CurrentThread.CurrentCulture = [Globalization.CultureInfo]::GetCultureInfo('fr-FR')
 
 function Etape([string]$t) { Write-Host ''; Write-Host "=== $t" -ForegroundColor Cyan }
@@ -118,7 +127,9 @@ if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
 }
 Ok 'git present'
 if (-not (Test-Path $RacineMedecin)) {
-    throw "Racine du secretariat inaccessible : $RacineMedecin (le PC $PosteSecretariat est-il allume et le dossier partage ?)"
+    throw ("Racine du secretariat inaccessible : $RacineMedecin`n" +
+           "Ce script se lance AU CABINET, sur le poste medecin, avec le PC $PosteSecretariat allume et son dossier partage.`n" +
+           "Depuis le domicile, utilisez maj_poste.ps1 (mise a jour du NAS et de ce poste seulement).")
 }
 Ok "secretariat joignable : $RacineMedecin"
 
@@ -280,3 +291,5 @@ if ($erreurs.Count -gt 0) {
 }
 Write-Host ''
 Write-Host 'Ouvrez Word sur ce poste : le ruban "Cabinet" doit apparaitre.' -ForegroundColor Green
+Write-Host ''
+Read-Host 'Termine. Appuyez sur Entree pour fermer cette fenetre'

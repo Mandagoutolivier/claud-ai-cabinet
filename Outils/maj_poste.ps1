@@ -25,6 +25,15 @@ param(
     [switch]$SansConstruction     # reutilise les modeles deja construits
 )
 $ErrorActionPreference = 'Stop'
+# Lance par raccourci, PowerShell fermerait la fenetre sur une erreur avant
+# qu'on ait pu la lire : on l'affiche et on attend une touche.
+trap {
+    Write-Host ''
+    Write-Host "ARRET : $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ''
+    Read-Host 'Appuyez sur Entree pour fermer cette fenetre'
+    exit 1
+}
 [System.Threading.Thread]::CurrentThread.CurrentCulture = [Globalization.CultureInfo]::GetCultureInfo('fr-FR')
 
 function Etape([string]$t) { Write-Host ''; Write-Host "=== $t" -ForegroundColor Cyan }
