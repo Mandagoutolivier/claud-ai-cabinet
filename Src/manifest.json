@@ -22,6 +22,7 @@
       "Word/modGras.bas",
       "Word/modRuban.bas",
       "Word/modRaccourcis.bas",
+      "Word/modPowerMic.bas",
       "Word/modTests_Word.bas"
     ],
     "forms": ["ufListe", "ufProgression"],

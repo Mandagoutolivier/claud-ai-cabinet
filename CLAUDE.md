@@ -41,7 +41,9 @@ poste secrétariat), avec feuilles de soins papier Cerfa S3110 exclusivement
   correction (Ctrl+Alt+C est réservé à l'ancien complément ChatGPT),
   **Ctrl+Alt+Maj+A / B / D** = boutons PowerMic : destinataire, appel,
   finaliser (corriger + demandes dans le même fichier + `[SORTIE] Dossier`
-  + secrétariat).
+  + secrétariat). Dragon appelle plutôt les macros de `modPowerMic`
+  (`wd.Run "Cabinet_A_NouvelleLettre"`, `_B_FormuleAppel`, `_D_Finaliser`,
+  `_P_Patient`).
 - Outils d'exploitation dans `Outils/` :
   - `maj_poste.ps1` : récupère GitHub sur le NAS, reconstruit les modèles,
     installe LE POSTE COURANT (rôle auto-détecté ou explicite).
