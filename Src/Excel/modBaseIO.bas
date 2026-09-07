@@ -65,14 +65,17 @@ End Sub
 
 Public Function LireTableX(ByVal fichier As String, ByVal feuille As String, _
                            Optional ByVal colonneNonVide As String = "ID") As Collection
-    Dim wb As Workbook, col As Collection
+    Dim wb As Workbook, col As Collection, ecranAvant As Boolean
     AssurerBaseConnue fichier
+    ' on restaure l'etat de l'ecran tel qu'on l'a trouve : un appelant qui
+    ' dessine une grille (agenda) l'a eteint et ne veut pas qu'on le rallume
+    ecranAvant = Application.ScreenUpdating
     Application.ScreenUpdating = False
     Set wb = Workbooks.Open(modFichiers.CopieLocale(fichier), ReadOnly:=True, AddToMru:=False)
     wb.Windows(1).Visible = False
     Set col = LireFeuilleX(wb, feuille, colonneNonVide)
     wb.Close False
-    Application.ScreenUpdating = True
+    Application.ScreenUpdating = ecranAvant
     Set LireTableX = col
 End Function
 

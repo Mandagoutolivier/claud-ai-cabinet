@@ -24,6 +24,9 @@ Private mPatients As Object            ' ID -> dict patient (cache du rendu)
 Private mProchainRafraichissement As Date
 Private mRafraichissementActif As Boolean
 Private mEmpreinte As String           ' dates de modification des fichiers agenda affiches
+Private mPatientsDate As String        ' FileDateTime de Patients.xlsx au dernier chargement
+Private mRdvCache As Object            ' annee -> Collection de RDV (dict)
+Private mRdvCacheDate As Object        ' annee -> FileDateTime du classeur agenda
 
 Private Const LIG_TITRE As Long = 2
 Private Const LIG_ENTETE As Long = 3
@@ -359,13 +362,18 @@ End Function
 Public Sub Rendre(Optional ByVal silencieux As Boolean = False)
     On Error GoTo Erreur
     Initialiser
-    Application.ScreenUpdating = False
+    ' 1. donnees (lectures de classeurs) AVANT d'eteindre l'ecran
     ChargerPatients
+    ' 2. dessin ecran eteint, sans evenements ni recalcul
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
     If mVueMois Then RendreMois silencieux Else RendreSemaine silencieux
     mEmpreinte = Empreinte()
+    Application.EnableEvents = True
     Application.ScreenUpdating = True
     Exit Sub
 Erreur:
+    Application.EnableEvents = True
     Application.ScreenUpdating = True
     If Not silencieux Then MsgBox "Affichage de l'agenda impossible : " & Err.Description, vbExclamation, "Cabinet"
 End Sub
@@ -406,24 +414,36 @@ Private Sub RendreSemaine(ByVal silencieux As Boolean)
         .Borders.LineStyle = xlContinuous
     End With
 
+    ' creneaux : colonne des heures ecrite EN UNE FOIS (tableau), puis mise
+    ' en forme de la grille entiere en quelques appels (pas ligne a ligne)
     ws.Columns(COL_HEURE).NumberFormat = "@"
-    nbLignes = 0
-    For minutes = MinutesDebut() To MinutesFin() - PasMinutes() Step PasMinutes()
-        r = LIG_DEBUT + nbLignes
-        ws.Cells(r, COL_HEURE).Value = TexteHeure(minutes)
-        If (minutes Mod 60) <> 0 Then ws.Cells(r, COL_HEURE).Font.Color = RGB(120, 120, 120)
-        ws.Cells(r, COL_HEURE).HorizontalAlignment = xlCenter
-        ws.Cells(r, COL_HEURE).Font.Bold = True
-        With ws.Range(ws.Cells(r, COL_PREMIER_JOUR), ws.Cells(r, COL_PREMIER_JOUR + NbJours() - 1))
-            .Interior.Color = RGB(235, 250, 235)
-            .Borders.LineStyle = xlContinuous
-            .Borders.Color = RGB(200, 200, 200)
-            .WrapText = True
-            .VerticalAlignment = xlTop
-        End With
-        nbLignes = nbLignes + 1
-    Next minutes
-    ws.Range(ws.Cells(LIG_DEBUT, 1), ws.Cells(LIG_DEBUT + nbLignes - 1, 1)).Borders.LineStyle = xlContinuous
+    nbLignes = (MinutesFin() - MinutesDebut()) \ PasMinutes()
+    If nbLignes < 1 Then nbLignes = 1
+    Dim heures() As String, gris As Collection
+    ReDim heures(1 To nbLignes, 1 To 1)
+    Set gris = New Collection
+    For j = 0 To nbLignes - 1
+        minutes = MinutesDebut() + j * PasMinutes()
+        heures(j + 1, 1) = TexteHeure(minutes)
+        If (minutes Mod 60) <> 0 Then gris.Add LIG_DEBUT + j
+    Next j
+    With ws.Range(ws.Cells(LIG_DEBUT, COL_HEURE), ws.Cells(LIG_DEBUT + nbLignes - 1, COL_HEURE))
+        .Value = heures
+        .HorizontalAlignment = xlCenter
+        .Font.Bold = True
+        .Borders.LineStyle = xlContinuous
+    End With
+    Dim g As Variant
+    For Each g In gris
+        ws.Cells(g, COL_HEURE).Font.Color = RGB(120, 120, 120)
+    Next g
+    With ws.Range(ws.Cells(LIG_DEBUT, COL_PREMIER_JOUR), ws.Cells(LIG_DEBUT + nbLignes - 1, COL_PREMIER_JOUR + NbJours() - 1))
+        .Interior.Color = RGB(235, 250, 235)
+        .Borders.LineStyle = xlContinuous
+        .Borders.Color = RGB(200, 200, 200)
+        .WrapText = True
+        .VerticalAlignment = xlTop
+    End With
 
     Set mCarte = CreateObject("Scripting.Dictionary")
     Set mCarteJours = Nothing
@@ -545,16 +565,29 @@ Private Sub RendreMois(ByVal silencieux As Boolean)
     End If
 End Sub
 
+' Index des patients, recharge SEULEMENT si Patients.xlsx a change
+' (3 000 fiches : la relecture a chaque page rendait l'agenda lent)
 Private Sub ChargerPatients()
-    Dim p As Object
-    Set mPatients = CreateObject("Scripting.Dictionary")
+    Dim p As Object, f As String, d As String
+    f = modConfig.FichierPatients()
     On Error Resume Next
-    For Each p In modBaseIO.LireTableX(modConfig.FichierPatients(), "PATIENTS")
+    d = ""
+    If Len(Dir$(f)) > 0 Then d = CStr(FileDateTime(f))
+    If Not mPatients Is Nothing And d = mPatientsDate And Len(d) > 0 Then Exit Sub
+    Set mPatients = CreateObject("Scripting.Dictionary")
+    For Each p In modBaseIO.LireTableX(f, "PATIENTS")
         Set mPatients(p("ID")) = p
     Next p
+    mPatientsDate = d
 End Sub
 
-' RDV entre deux dates (les deux annees si la periode chevauche)
+' Force la relecture des patients au prochain rendu (apres creation/edition)
+Public Sub InvaliderPatients()
+    mPatientsDate = ""
+End Sub
+
+' RDV entre deux dates (les deux annees si la periode chevauche).
+' Chaque classeur annuel est mis en cache et relu seulement s'il a change.
 Private Function RdvPeriode(ByVal d1 As Date, ByVal d2 As Date) As Collection
     Dim col As Collection, r As Object, d As Date, annees As Object, a As Variant, tous As Collection
     Set col = New Collection
@@ -562,11 +595,7 @@ Private Function RdvPeriode(ByVal d1 As Date, ByVal d2 As Date) As Collection
     annees(Year(d1)) = 1
     annees(Year(d2)) = 1
     For Each a In annees.Keys
-        modAgenda.AssurerAgendaAnnee CLng(a)
-        On Error Resume Next
-        Set tous = Nothing
-        Set tous = modBaseIO.LireTableX(modConfig.FichierAgenda(CLng(a)), "RDV")
-        On Error GoTo 0
+        Set tous = RdvAnnee(CLng(a))
         If Not tous Is Nothing Then
             For Each r In tous
                 d = DateDe(r("Date"))
@@ -575,6 +604,25 @@ Private Function RdvPeriode(ByVal d1 As Date, ByVal d2 As Date) As Collection
         End If
     Next a
     Set RdvPeriode = col
+End Function
+
+Private Function RdvAnnee(ByVal annee As Long) As Collection
+    Dim f As String, d As String
+    If mRdvCache Is Nothing Then Set mRdvCache = CreateObject("Scripting.Dictionary")
+    If mRdvCacheDate Is Nothing Then Set mRdvCacheDate = CreateObject("Scripting.Dictionary")
+    modAgenda.AssurerAgendaAnnee annee
+    f = modConfig.FichierAgenda(annee)
+    On Error Resume Next
+    d = CStr(FileDateTime(f))
+    If mRdvCache.Exists(annee) Then
+        If mRdvCacheDate(annee) = d Then Set RdvAnnee = mRdvCache(annee): Exit Function
+    End If
+    Set RdvAnnee = Nothing
+    Set RdvAnnee = modBaseIO.LireTableX(f, "RDV")
+    If Not RdvAnnee Is Nothing Then
+        Set mRdvCache(annee) = RdvAnnee
+        mRdvCacheDate(annee) = d
+    End If
 End Function
 
 Private Sub PlacerRdv(ByVal ws As Worksheet, ByVal rdv As Object)

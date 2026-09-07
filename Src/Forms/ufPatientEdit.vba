@@ -114,6 +114,9 @@ Private Sub btnOK_Click()
         modBaseIO.ModifierLigne modConfig.FichierPatients(), "PATIENTS", "ID", mID, d
         MsgBox "Fiche mise a jour.", vbInformation, "Cabinet"
     End If
+    On Error Resume Next
+    modAgendaVue.InvaliderPatients
+    On Error GoTo 0
     Me.Hide
     Exit Sub
 Erreur:

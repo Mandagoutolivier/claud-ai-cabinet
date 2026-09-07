@@ -108,6 +108,7 @@ Private Sub btnProvisoire_Click()
     prenom = Trim$(InputBox("Prenom :", "Nouveau patient (provisoire)"))
     tel = Trim$(InputBox("Telephone (pour le rappeler) :", "Nouveau patient (provisoire)"))
     Set p = modAgenda.CreerPatientProvisoire(nom, prenom, tel)
+    modAgendaVue.InvaliderPatients
     Set mPatient = p
     lblPatient.Caption = p("Prenom") & " " & p("Nom") & " (PROVISOIRE - fiche a completer)"
     Exit Sub
