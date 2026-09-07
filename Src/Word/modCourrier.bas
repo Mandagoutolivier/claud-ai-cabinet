@@ -210,18 +210,96 @@ End Function
 ' nomModele SANS extension : essaie .dotx, .dotm, .dot (le modele reel du
 ' cabinet peut etre dans n'importe lequel de ces formats)
 Private Function CreerDepuisModele(ByVal nomModele As String) As Document
-    Dim base As String, ext As Variant, chemin As String
+    Dim base As String, ext As Variant, chemin As String, doc As Document
+    ' [COURRIER] Modele : nom du modele de lettre du cabinet dans Modeles\
+    ' (sans extension). Defaut : lettretypeclaude, sinon LETTRE TYPE.
+    If nomModele = "LETTRE TYPE" Then nomModele = modConfig.Config("COURRIER", "Modele", "lettretypeclaude")
     base = modConfig.Chemin("Modeles") & "\" & nomModele
-    For Each ext In Array(".dotx", ".dotm", ".dot")
+    For Each ext In Array(".dotm", ".dotx", ".dot")
         chemin = base & ext
         If modFichiers.FichierExiste(chemin) Then
-            Set CreerDepuisModele = Documents.Add(Template:=chemin)
+            Set doc = Documents.Add(Template:=chemin)
+            NormaliserModele doc
+            Set CreerDepuisModele = doc
             Exit Function
         End If
     Next ext
+    ' repli : l'ancien nom
+    If nomModele <> "LETTRE TYPE" Then
+        base = modConfig.Chemin("Modeles") & "\LETTRE TYPE"
+        For Each ext In Array(".dotx", ".dotm", ".dot")
+            chemin = base & ext
+            If modFichiers.FichierExiste(chemin) Then
+                Set doc = Documents.Add(Template:=chemin)
+                NormaliserModele doc
+                Set CreerDepuisModele = doc
+                Exit Function
+            End If
+        Next ext
+    End If
     Err.Raise vbObjectError + 300, "modCourrier", _
         "Modele introuvable : " & base & " (.dotx/.dotm/.dot)"
 End Function
+
+' Le modele de lettre du medecin (lettretypeclaude.dotm) ne porte que deux
+' signets : CORRESPONDANT et FORMULE_APPEL (ceux que Dragon connait). On y
+' ajoute les signets attendus par le logiciel sans toucher a la mise en
+' page : DESTINATAIRE et APPEL (memes zones), CORPS (paragraphe vide apres
+' l'appel), POLITESSE (formule par defaut avant la signature, si
+' [COURRIER] PolitesseAuto=1). Idempotent.
+Public Sub NormaliserModele(ByVal doc As Document)
+    On Error Resume Next
+    Dim rng As Range, pAppel As Paragraph, pSuiv As Paragraph, modele As ParagraphFormat
+    Alias doc, "DESTINATAIRE", "CORRESPONDANT"
+    Alias doc, "APPEL", "FORMULE_APPEL"
+    If Not doc.Bookmarks.Exists("CORPS") And doc.Bookmarks.Exists("APPEL") Then
+        Set pAppel = doc.Bookmarks("APPEL").Range.Paragraphs(1)
+        Set pSuiv = pAppel.Next
+        ' il faut un paragraphe VIDE entre l'appel et la signature
+        If pSuiv Is Nothing Then
+            pAppel.Range.InsertParagraphAfter
+            Set pSuiv = pAppel.Next
+        ElseIf Len(Trim$(Replace(pSuiv.Range.Text, vbCr, ""))) > 0 Then
+            pAppel.Range.InsertParagraphAfter
+            Set pSuiv = pAppel.Next
+        End If
+        ' un espace dans le paragraphe : un signet sur du vide ne s'etend
+        ' pas quand on dicte dedans
+        Set rng = pSuiv.Range
+        rng.MoveEnd wdCharacter, -1
+        rng.Text = " "
+        Set rng = pSuiv.Range
+        rng.MoveEnd wdCharacter, -1
+        doc.Bookmarks.Add "CORPS", rng
+        ' mise en forme du corps : celle des courriers du cabinet
+        With pSuiv.Format
+            .LeftIndent = 0
+            .FirstLineIndent = CentimetersToPoints(modConfig.ConfigNum("COURRIER", "AlineaCm", 0))
+            .Alignment = wdAlignParagraphJustify
+        End With
+        AppliquerEspacement doc, "CORPS"
+    End If
+    If Not doc.Bookmarks.Exists("POLITESSE") And doc.Bookmarks.Exists("CORPS") Then
+        If modConfig.ConfigNum("COURRIER", "PolitesseAuto", 1) = 1 Then
+            Set pSuiv = doc.Bookmarks("CORPS").Range.Paragraphs(1)
+            pSuiv.Range.InsertParagraphAfter
+            Set pSuiv = pSuiv.Next
+            Set rng = pSuiv.Range
+            rng.MoveEnd wdCharacter, -1
+            rng.Text = PolitesseParDefaut(False)
+            doc.Bookmarks.Add "POLITESSE", rng
+            AppliquerEspacement doc, "POLITESSE"
+        End If
+    End If
+End Sub
+
+' Pose le signet 'nouveau' sur la zone du signet 'existant' s'il manque
+Private Sub Alias(ByVal doc As Document, ByVal nouveau As String, ByVal existant As String)
+    On Error Resume Next
+    If doc.Bookmarks.Exists(nouveau) Then Exit Sub
+    If Not doc.Bookmarks.Exists(existant) Then Exit Sub
+    doc.Bookmarks.Add nouveau, doc.Bookmarks(existant).Range
+End Sub
 
 Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor As Object)
     Dim expediteur As String, destinataire As String, concerne As String
@@ -553,11 +631,18 @@ End Sub
 
 ' Remplace le contenu d'un signet et RECREE le signet sur le texte insere
 Public Sub RemplirSignet(ByVal doc As Document, ByVal nom As String, ByVal texte As String)
-    Dim rng As Range
+    Dim rng As Range, aliasDragon As String
     If Not doc.Bookmarks.Exists(nom) Then Exit Sub
+    ' signets du modele du medecin (connus des commandes Dragon) : reposes
+    If nom = "DESTINATAIRE" Then aliasDragon = "CORRESPONDANT"
+    If nom = "APPEL" Then aliasDragon = "FORMULE_APPEL"
+    If Len(aliasDragon) > 0 Then
+        If Not doc.Bookmarks.Exists(aliasDragon) Then aliasDragon = ""
+    End If
     Set rng = doc.Bookmarks(nom).Range
     rng.Text = texte
     doc.Bookmarks.Add nom, rng
+    If Len(aliasDragon) > 0 Then doc.Bookmarks.Add aliasDragon, rng
 End Sub
 
 ' --- Corps du courrier ------------------------------------------------
