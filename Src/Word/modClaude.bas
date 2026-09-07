@@ -7,7 +7,7 @@ Option Explicit
 '  - reessais sur 429/5xx et erreurs reseau
 '  - mode Debug (config.ini [API] Debug=1) : le contenu exact envoye est
 '    ecrit dans Logs\payload_debug.json (recette sur patients FICTIFS)
-' + Orchestration de la commande "CorrigerCourrier" (Ctrl+Alt+C).
+' + Orchestration de la commande "CorrigerCourrier" (Ctrl+Alt+Maj+C).
 ' =====================================================================
 
 Private Const URL_API As String = "https://api.anthropic.com/v1/messages"
@@ -196,7 +196,7 @@ Private Function ChargerReferences() As String
 End Function
 
 ' =====================================================================
-' Commande principale : CORRIGER LE COURRIER (Ctrl+Alt+C / voix)
+' Commande principale : CORRIGER LE COURRIER (Ctrl+Alt+Maj+C / voix)
 ' =====================================================================
 Public Sub CorrigerCourrier()
     On Error GoTo Erreur

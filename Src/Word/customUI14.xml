@@ -6,7 +6,7 @@
         <group id="cabGrpCourrier" label="Courrier">
           <button id="cabNouveau" label="Nouveau courrier" imageMso="FileNew" size="large" onAction="Ruban_Action" screentip="Nouveau courrier (Ctrl+Alt+N)" supertip="Choisir le patient et le correspondant : le courrier est créé avec l'en-tête, le destinataire et l'identité du patient."/>
           <button id="cabPatient" label="Insérer le patient" imageMso="AddressBook" size="normal" onAction="Ruban_Action" screentip="Insérer l'identité du patient (Ctrl+Alt+P)"/>
-          <button id="cabCorriger" label="Corriger (IA)" imageMso="Spelling" size="large" onAction="Ruban_Action" screentip="Corriger le courrier dicté (Ctrl+Alt+C)" supertip="Anonymisation locale puis correction par l'IA, mise en gras automatique."/>
+          <button id="cabCorriger" label="Corriger (IA)" imageMso="Spelling" size="large" onAction="Ruban_Action" screentip="Corriger le courrier dicté (Ctrl+Alt+Maj+C)" supertip="Anonymisation locale puis correction par l'IA, mise en gras automatique."/>
           <button id="cabDerivee" label="Lettre dérivée" imageMso="MailMergeStartLetters" size="normal" onAction="Ruban_Action" screentip="Demande d'examen ou d'avis (Ctrl+Alt+D)"/>
           <button id="cabValider" label="Valider" imageMso="ReviewAcceptChange" size="large" onAction="Ruban_Action" screentip="Valider et transmettre au secrétariat (Ctrl+Alt+V)"/>
           <button id="cabEcg" label="Envoyer à l'ECG" imageMso="ChartInsert" size="normal" onAction="Ruban_Action" screentip="Envoyer l'identité du patient à Resting12Lead (Ctrl+Alt+G)"/>

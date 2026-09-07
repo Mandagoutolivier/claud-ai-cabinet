@@ -169,7 +169,7 @@ if ($codeTache -eq 0) {
 
 # ---------------------------------------------------------------- 5. raccourcis clavier (medecin)
 if ($Role -eq 'Medecin' -and -not $SansRelais) {
-    Etape 'Raccourcis clavier Ctrl+Alt+N/C/D/P/G/V dans Normal.dotm'
+    Etape 'Raccourcis clavier Ctrl+Alt+N/D/P/G/V/B et Ctrl+Alt+Maj+C dans Normal.dotm'
     try { & (Join-Path $PSScriptRoot 'installer_relais.ps1'); Ok 'relais installe' }
     catch { Ko "relais non installe : $($_.Exception.Message) (verifier l'acces approuve au modele d'objet VBA, tuto etape 3)" }
 }

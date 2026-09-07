@@ -11,7 +11,7 @@ Public Sub AideCabinet()
     MsgBox "Commandes du cabinet :" & vbCrLf & vbCrLf & _
            "Ctrl+Alt+N  -  Nouveau courrier (choix du patient)" & vbCrLf & _
            "Ctrl+Alt+P  -  Inserer l'identite du patient (nom + age) au curseur" & vbCrLf & _
-           "Ctrl+Alt+C  -  Corriger le courrier dicte (IA)" & vbCrLf & _
+           "Ctrl+Alt+Maj+C  -  Corriger le courrier dicte (IA)" & vbCrLf & _
            "Ctrl+Alt+D  -  Lettre derivee (demande d'examen ou d'avis)" & vbCrLf & _
            "Ctrl+Alt+G  -  Envoyer l'identite au poste ECG (Resting12Lead)" & vbCrLf & _
            "Ctrl+Alt+V  -  Valider et transmettre au secretariat" & vbCrLf & vbCrLf & _
@@ -50,13 +50,21 @@ Private Sub InstallerRaccourcisSession(ByVal verbeux As Boolean)
         Exit Sub
     End If
     ' noms NON qualifies : c'est la forme que Word resout pour un modele global
+    ' Correction = Ctrl+Alt+MAJ+C : Ctrl+Alt+C est deja pris par l'ancien
+    ' complement ModeleCourrierChatGPT_PROD.dotm, que le medecin utilise encore.
+    Dim majuscule As Variant
     touches = Array(wdKeyN, wdKeyC, wdKeyD, wdKeyP, wdKeyG, wdKeyV, wdKeyB)
+    majuscule = Array(False, True, False, False, False, False, False)
     macros = Array("NouveauCourrier", "CorrigerCourrier", "LettreDerivee", _
                    "InsererPatient", "EnvoyerECG", "ValiderCourrier", "MettreEnGras")
     CustomizationContext = modele
     For i = 0 To UBound(touches)
         Dim code As Long
-        code = BuildKeyCode(wdKeyControl, wdKeyAlt, touches(i))
+        If majuscule(i) Then
+            code = BuildKeyCode(wdKeyControl, wdKeyAlt, wdKeyShift, touches(i))
+        Else
+            code = BuildKeyCode(wdKeyControl, wdKeyAlt, touches(i))
+        End If
         ' on repose systematiquement la liaison (la propriete Command d'un
         ' modele global se lit vide, elle ne permet pas de verifier)
         Err.Clear
@@ -64,7 +72,7 @@ Private Sub InstallerRaccourcisSession(ByVal verbeux As Boolean)
         If Err.Number = 0 Then repares = repares + 1 Else modLog.LogErreur "raccourci " & macros(i) & " : " & Err.Description
     Next i
     modele.Saved = True          ' aucune invite d'enregistrement du modele
-    If verbeux Then MsgBox "Raccourcis verifies : " & repares & " reinstalle(s) (Ctrl+Alt+N/C/D/P/G/V/B).", vbInformation, "Cabinet"
+    If verbeux Then MsgBox "Raccourcis verifies : " & repares & " reinstalle(s) (Ctrl+Alt+N/D/P/G/V/B, Ctrl+Alt+Maj+C).", vbInformation, "Cabinet"
     modLog.LogInfo "Raccourcis (re)poses : " & repares & "/7"
 End Sub
 
