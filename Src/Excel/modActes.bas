@@ -151,9 +151,12 @@ Public Function EnregistrerSeance(ByVal infos As Object, ByVal actesChoisis As C
     seanceID = SeanceIDDe(infos)
     If Len(dateActe) = 0 Then dateActe = DateActeDe(infos)
     ' rendez-vous du patient ce jour-la : rattache a la seance, jamais bloquant
-    On Error Resume Next
-    rdvID = modAgenda.RdvPourSeance(ValeurOuVide(infos, "PatientID"), dateActe)
-    On Error GoTo 0
+    rdvID = ValeurOuVide(infos, "RdvID")          ' pose a l'arrivee, transmis par Word
+    If Len(rdvID) = 0 Then
+        On Error Resume Next
+        rdvID = modAgenda.RdvPourSeance(ValeurOuVide(infos, "PatientID"), dateActe)
+        On Error GoTo 0
+    End If
     If Len(rdvID) > 0 Then infos("RdvID") = rdvID
 
     If modJournal.SeanceExiste(seanceID, AnneeDeDate(dateActe)) Then

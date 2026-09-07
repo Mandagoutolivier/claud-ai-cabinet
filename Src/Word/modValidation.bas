@@ -102,6 +102,7 @@ Public Function ValiderDocument(ByVal doc As Document, ByVal silencieux As Boole
     d("ConsultationID") = consultationID
     d("SeanceID") = consultationID
     d("DateActe") = dateActe
+    d("RdvID") = VariableDoc(doc, "RdvID")
     If Not cor Is Nothing Then d("DestinataireID") = cor("ID")
     d("CheminDocx") = cheminDocx
     d("CheminPdf") = cheminPdf

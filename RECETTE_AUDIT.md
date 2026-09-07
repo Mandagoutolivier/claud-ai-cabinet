@@ -103,8 +103,9 @@ enregistrements. Testez-le vraiment (renommez le dossier `Base` une seconde).
 
 | # | Ce qu'on fait | Attendu |
 |---|---|---|
-| 5t.1 | Ctrl+Alt+N | courrier ouvert immédiatement, aucune liste ; curseur dans le bloc adresse vide |
-| 5t.2 | Dicter l'abréviation Dragon du médecin traitant | bloc adresse rempli |
+| 5t.0 | Sur ACCUEIL : « Arrivée d'un patient » (ou double-clic → Arrivé) | fichier dans `Echange\Arrives`, GDT envoyé à l'ECG |
+| 5t.1 | Sur le poste médecin : Ctrl+Alt+N | courrier ouvert **pour ce patient**, adresse du médecin traitant remplie, aucune liste ; deux patients arrivés → courte liste |
+| 5t.2 | Patient sans médecin traitant en base : Ctrl+Alt+N | courrier pour le patient, bloc adresse vide : dicter l'abréviation Dragon |
 | 5t.3 | F6 | liste des patients ; après choix, identité insérée au début du corps, curseur dans le corps |
 | 5t.4 | Dicter, Ctrl+Alt+Maj+C | correction lancée (le patient est rattaché) ; Ctrl+Alt+C lance l'ANCIEN logiciel |
 | 5t.5 | Ctrl+Alt+V | validation ; si le nom dicté est dans la base, le correspondant est reconnu (formules, lettres de demande) ; bloc adresse resserré et en gras |

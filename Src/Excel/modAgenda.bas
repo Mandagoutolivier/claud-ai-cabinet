@@ -236,6 +236,30 @@ Public Function PatientsProvisoires() As Collection
     Set PatientsProvisoires = res
 End Function
 
+' --- arrivee du patient : LA source de la consultation ------------------
+' Quand la secretaire marque "Arrive", elle a deja choisi le patient (et
+' son medecin traitant est dans la fiche). On depose un fichier dans
+' Echange\Arrives : le poste medecin (Ctrl+Alt+N) le prend directement,
+' sans redemander ni patient ni destinataire ; l'ECG recoit le GDT ; le
+' RdvID suit jusqu'au journal des honoraires.
+Public Function SignalerArrivee(ByVal pat As Object, Optional ByVal rdvID As String = "", _
+                                Optional ByVal heureRdv As String = "") As String
+    Dim d As Object, dossier As String
+    Set d = CreateObject("Scripting.Dictionary")
+    d("PatientID") = pat("ID")
+    d("Nom") = pat("Nom")
+    d("Prenom") = pat("Prenom")
+    d("DDN") = pat("DDN")
+    If pat.Exists("MedTraitantID") Then d("MedTraitantID") = pat("MedTraitantID")
+    d("RdvID") = rdvID
+    d("HeureRdv") = heureRdv
+    d("HeureArrivee") = Format$(Now, "hh:nn")
+    d("DateArrivee") = Format$(Date, "dd/mm/yyyy")
+    d("Poste") = Environ$("COMPUTERNAME")
+    dossier = modConfig.Chemin("Echange") & "\Arrives"
+    SignalerArrivee = modFichiers.EcrireDrapeau(dossier, Format$(Now, "yyyymmdd-hhnnss") & "_" & pat("ID"), d)
+End Function
+
 ' --- lien rendez-vous <-> consultation ---------------------------------
 ' RDV d'un patient un jour donne (hors annules et indisponibilites), "" si
 ' aucun. Sert a rattacher la seance enregistree au journal.

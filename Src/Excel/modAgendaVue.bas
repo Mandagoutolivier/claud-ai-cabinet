@@ -829,6 +829,12 @@ Private Sub ExecuterAction(ByVal rdvs As Collection, ByVal rdvID As String, ByVa
     Select Case action
         Case "ARRIVE"
             modAgenda.MarquerStatut rdvID, "Arrive", annee
+            If mPatients.Exists(r("PatientID")) Then
+                On Error Resume Next
+                modAgenda.SignalerArrivee mPatients(r("PatientID")), rdvID, r("Heure")
+                If Err.Number <> 0 Then modLog.LogErreur "Signal d'arrivee : " & Err.Description
+                On Error GoTo 0
+            End If
             If Len(modConfig.Config("ECG", "DossierGdt", "")) > 0 And mPatients.Exists(r("PatientID")) Then
                 On Error Resume Next
                 modGdt.EcrireGdtPatient mPatients(r("PatientID"))

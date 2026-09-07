@@ -58,6 +58,14 @@ Public Sub UI_ArriveePatient()
     Set r = f.Resultat
     Unload f
     modAgenda.MarquerStatut r("ID"), "Arrive"
+    ' file des patients arrives pour le poste medecin (Ctrl+Alt+N)
+    On Error Resume Next
+    Dim pArr As Object
+    For Each pArr In modBaseIO.LireTableX(modConfig.FichierPatients(), "PATIENTS")
+        If pArr("ID") = r("PatientID") Then modAgenda.SignalerArrivee pArr, r("ID"), r("Heure"): Exit For
+    Next pArr
+    If Err.Number <> 0 Then modLog.LogErreur "Signal d'arrivee : " & Err.Description
+    On Error GoTo Erreur
     ' envoi automatique de l'identite au poste ECG (si configure)
     Dim noteEcg As String
     If Len(modConfig.Config("ECG", "DossierGdt", "")) > 0 Then

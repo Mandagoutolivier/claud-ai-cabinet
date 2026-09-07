@@ -13,13 +13,31 @@ Public Sub NouveauCourrier()
     On Error GoTo Erreur
     Dim pat As Object, cor As Object
     modLog.Etape "NouveauCourrier : lecture de la configuration (" & modConfig.Racine() & ")"
-    ' [COURRIER] SaisieRapide=1 : le courrier s'ouvre IMMEDIATEMENT, sans
-    ' choisir ni patient ni destinataire. Le medecin dicte le medecin traitant
-    ' (abreviation Dragon) dans le bloc adresse, et appelle l'identite du
-    ' patient par F6 / Ctrl+Alt+P, qui rattache alors le patient au document.
+    ' [COURRIER] SaisieRapide=1 : le patient et son medecin traitant viennent
+    ' de l'ARRIVEE signalee par la secretaire (Echange\Arrives) : aucune liste
+    ' a revalider sur ce poste. Plusieurs patients arrives -> courte liste ;
+    ' aucun -> courrier vide (dicter le medecin traitant, F6 pour le patient).
     If modConfig.ConfigNum("COURRIER", "SaisieRapide", 1) = 1 Then
-        modLog.Etape "NouveauCourrier : saisie rapide"
-        CreerCourrierRapide
+        Dim arrivee As Object, doc As Document
+        modLog.Etape "NouveauCourrier : patient arrive ?"
+        Set arrivee = PrendreArrivee()
+        If arrivee Is Nothing Then
+            modLog.Etape "NouveauCourrier : aucune arrivee, courrier vide"
+            CreerCourrierRapide
+        Else
+            Set pat = modBase.PatientParID(arrivee("PatientID"))
+            If pat Is Nothing Then Err.Raise vbObjectError + 310, "modCourrier", "Patient arrive introuvable dans la base : " & arrivee("PatientID")
+            Set cor = Nothing
+            If Len(pat("MedTraitantID")) > 0 Then Set cor = modBase.CorrespondantParID(pat("MedTraitantID"))
+            modLog.Etape "NouveauCourrier : creation pour " & pat("Nom") & " (arrive " & arrivee("HeureArrivee") & ")"
+            If cor Is Nothing Then
+                Set doc = CreerCourrierRapidePour(pat)     ' pas de medecin traitant : a dicter
+            Else
+                Set doc = CreerCourrierPour(pat, cor)
+            End If
+            doc.Variables("RdvID") = arrivee("RdvID")
+            ConsommerArrivee arrivee("_Chemin")
+        End If
         modLog.Etape "NouveauCourrier : termine"
         Exit Sub
     End If
@@ -43,6 +61,62 @@ Erreur:
     MsgBox "Impossible de creer le courrier :" & vbCrLf & descErr & vbCrLf & vbCrLf & _
            "Etape : " & etapeErr & vbCrLf & "Source : " & srcErr & " (n° " & numErr & ")", vbExclamation, "Cabinet"
 End Sub
+
+' --- file des patients arrives (deposee par le secretariat) ---------------
+' Renvoie le drapeau d'arrivee a prendre (dict, "_Chemin" = fichier), ou
+' Nothing. Un seul patient arrive du jour -> pris sans question ; plusieurs
+' -> courte liste (heure, nom) ; les arrivees d'un autre jour sont ignorees.
+Private Function PrendreArrivee() As Object
+    Dim dossier As String, f As Variant, d As Object, items As Collection, fso As Object
+    Dim auj As String, it As Object, fl As ufListe
+    dossier = modConfig.Chemin("Echange") & "\Arrives"
+    If Not modFichiers.DossierExiste(dossier) Then Exit Function
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    auj = Format$(Date, "dd/mm/yyyy")
+    Set items = New Collection
+    For Each f In modFichiers.ListerFichiers(dossier, ".txt")
+        Set d = modFichiers.LireDrapeau(CStr(f))
+        If d.Exists("DateArrivee") Then
+            If d("DateArrivee") = auj And d.Exists("PatientID") Then
+                d("_Chemin") = CStr(f)
+                d("ID") = fso.GetFileName(CStr(f))
+                If Not d.Exists("HeureArrivee") Then d("HeureArrivee") = ""
+                d("Patient") = d("Nom") & " " & d("Prenom")
+                items.Add d
+            End If
+        End If
+    Next f
+    If items.Count = 0 Then Exit Function
+    If items.Count = 1 Then Set PrendreArrivee = items(1): Exit Function
+    Set fl = New ufListe
+    fl.Configurer "Patients arrives : lequel ?", items, Array("HeureArrivee", "Patient", "DDN"), "50 pt;200 pt;70 pt"
+    fl.Show vbModal
+    If Not fl.Annule Then Set PrendreArrivee = fl.Resultat
+    Unload fl
+End Function
+
+' L'arrivee prise en charge est deplacee dans Arrives\Pris (historique du jour)
+Private Sub ConsommerArrivee(ByVal chemin As String)
+    On Error Resume Next
+    Dim fso As Object, dest As String
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    dest = fso.GetParentFolderName(chemin) & "\Pris"
+    modFichiers.EnsureDossier dest
+    fso.MoveFile chemin, dest & "\" & fso.GetFileName(chemin)
+End Sub
+
+' Courrier pour un patient connu mais SANS medecin traitant en base :
+' en-tete complet sauf le bloc adresse, a dicter ; patient rattache.
+Public Function CreerCourrierRapidePour(ByVal pat As Object) As Document
+    Dim doc As Document
+    Set doc = CreerCourrierRapide()
+    doc.Variables("PatientID") = pat("ID")
+    If doc.Bookmarks.Exists("CONCERNE") Then
+        RemplirSignet doc, "CONCERNE", "Concerne : " & modTexte.CiviliteCourte(pat("Sexe")) & " " & _
+            pat("Prenom") & " " & pat("Nom") & ", " & modTexte.NeLe(pat("Sexe")) & " " & pat("DDN")
+    End If
+    Set CreerCourrierRapidePour = doc
+End Function
 
 ' Courrier vide pret a la dictee : en-tete expediteur, date, appel et
 ' politesse par defaut, signature ; bloc destinataire VIDE (curseur dedans).
