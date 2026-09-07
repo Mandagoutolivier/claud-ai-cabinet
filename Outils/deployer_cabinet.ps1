@@ -185,7 +185,14 @@ robocopy (Join-Path $git 'Donnees') (Join-Path $dev 'Donnees') /E /NFL /NDL /NJH
     /XD 'Patients' 'Actes' 'Echange' 'Sauvegardes' 'Logs' | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "Copie de Donnees vers le NAS echouee (code $LASTEXITCODE)." }
 Ok 'Donnees copie (configuration et modeles ; bases existantes conservees)'
-foreach ($f in 'installer_cabinet.ps1', 'README.md', 'LETTRES_DERIVEES.md', 'OPTIMISATIONS_20260905.md', 'RECETTE_AUDIT.md') {
+# scripts de construction et d'installation : versionnes dans le depot
+# (dossier Build), publies vers le NAS a chaque mise a jour
+New-Item -ItemType Directory -Force -Path $build | Out-Null
+foreach ($f in Get-ChildItem (Join-Path $git 'Build') -Filter *.ps1 -ErrorAction SilentlyContinue) {
+    Copy-Item $f.FullName (Join-Path $build $f.Name) -Force
+}
+Ok 'scripts Build publies (build, installer_cabinet, installer_relais, sync_startup, init_donnees)'
+foreach ($f in 'README.md', 'LETTRES_DERIVEES.md', 'OPTIMISATIONS_20260905.md', 'RECETTE_AUDIT.md') {
     $s = Join-Path $git $f
     if (Test-Path $s) { Copy-Item $s (Join-Path $build $f) -Force -ErrorAction SilentlyContinue }
 }

@@ -180,7 +180,14 @@ $basePat = Join-Path $dev 'Donnees\Base\Patients.xlsx'
 if (Test-Path $basePat) { Ok "base patients du NAS conservee : $basePat" }
 else { Info "pas de Patients.xlsx dans $dev\Donnees\Base : le logiciel creera une base vide a la premiere utilisation" }
 
-foreach ($f in 'installer_cabinet.ps1', 'README.md', 'LETTRES_DERIVEES.md', 'OPTIMISATIONS_20260905.md') {
+# scripts de construction et d'installation : versionnes dans le depot
+# (dossier Build), publies vers le NAS a chaque mise a jour
+New-Item -ItemType Directory -Force -Path $build | Out-Null
+foreach ($f in Get-ChildItem (Join-Path $git 'Build') -Filter *.ps1 -ErrorAction SilentlyContinue) {
+    Copy-Item $f.FullName (Join-Path $build $f.Name) -Force
+}
+Ok 'scripts Build publies (build, installer_cabinet, installer_relais, sync_startup, init_donnees)'
+foreach ($f in 'README.md', 'LETTRES_DERIVEES.md', 'OPTIMISATIONS_20260905.md', 'RECETTE_AUDIT.md') {
     $s = Join-Path $git $f
     if (Test-Path $s) { Copy-Item $s (Join-Path $build $f) -Force -ErrorAction SilentlyContinue }
 }

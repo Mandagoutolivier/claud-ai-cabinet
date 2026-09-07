@@ -34,6 +34,11 @@ poste secrétariat), avec feuilles de soins papier Cerfa S3110 exclusivement
   **Les fichiers nominatifs (Patients.xlsx, Journal_*.xlsx, Agenda_*.xlsx)
   ne sont PAS dans ce dépôt** (purgés de l'historique pour raisons RGPD) :
   ne jamais les y remettre.
+- Scripts de construction et d'installation dans `Build/` (`build.ps1`,
+  `installer_cabinet.ps1`, `installer_relais.ps1`, `sync_startup.ps1`,
+  `init_donnees.ps1`) : versionnés ici, publiés vers le NAS par les outils.
+- Raccourcis Word : Ctrl+Alt+N/D/P/G/V/B et **Ctrl+Alt+Maj+C** pour la
+  correction (Ctrl+Alt+C est réservé à l'ancien complément ChatGPT).
 - Outils d'exploitation dans `Outils/` :
   - `maj_poste.ps1` : récupère GitHub sur le NAS, reconstruit les modèles,
     installe LE POSTE COURANT (rôle auto-détecté ou explicite).
