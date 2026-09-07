@@ -110,6 +110,9 @@ enregistrements. Testez-le vraiment (renommez le dossier `Base` une seconde).
 | 5t.4 | Dicter, Ctrl+Alt+Maj+C | correction lancée (le patient est rattaché) ; Ctrl+Alt+C lance l'ANCIEN logiciel |
 | 5t.5 | Ctrl+Alt+V | validation ; si le nom dicté est dans la base, le correspondant est reconnu (formules, lettres de demande) ; bloc adresse resserré et en gras |
 | 5t.6 | Ctrl+Alt+V sans avoir fait F6 | refus explicite « appuyez sur F6 » |
+| 5t.7 | Ctrl+Alt+Maj+A puis dicter ; Ctrl+Alt+Maj+B puis dicter | le bloc adresse, puis la formule d'appel, sont remplacés par la dictée |
+| 5t.8 | Courrier avec « je demande une scintigraphie », **Ctrl+Alt+Maj+D** | correction, lettre de demande ajoutée après un saut de page dans le MÊME document, fichier dans le dossier patient ET dans `\\DS224\home\sortiedragon` (`NOM Prenom aammjjhhmm.docx`), courrier dans la file du secrétariat |
+| 5t.9 | Ctrl+Alt+Maj+D une seconde fois sur le même courrier | les demandes précédentes sont remplacées, pas dupliquées ; nouvelle version v2 |
 
 ## 6. Lettres de demande
 

@@ -71,6 +71,10 @@ Private Sub InstallerRaccourcisSession(ByVal verbeux As Boolean)
         KeyBindings.Add wdKeyCategoryMacro, macros(i), code
         If Err.Number = 0 Then repares = repares + 1 Else modLog.LogErreur "raccourci " & macros(i) & " : " & Err.Description
     Next i
+    ' boutons PowerMic : A = destinataire, B = appel, D = finaliser (Ctrl+Alt+Maj+...)
+    Err.Clear: KeyBindings.Add wdKeyCategoryMacro, "AllerDestinataire", BuildKeyCode(wdKeyControl, wdKeyAlt, wdKeyShift, wdKeyA)
+    Err.Clear: KeyBindings.Add wdKeyCategoryMacro, "AllerAppel", BuildKeyCode(wdKeyControl, wdKeyAlt, wdKeyShift, wdKeyB)
+    Err.Clear: KeyBindings.Add wdKeyCategoryMacro, "FinaliserCourrier", BuildKeyCode(wdKeyControl, wdKeyAlt, wdKeyShift, wdKeyD)
     ' F6 = identite du patient (meme macro que Ctrl+Alt+P, plus rapide a la dictee)
     Err.Clear
     KeyBindings.Add wdKeyCategoryMacro, "InsererPatient", BuildKeyCode(wdKeyF6)

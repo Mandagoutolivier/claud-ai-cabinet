@@ -531,6 +531,13 @@ Public Function GenererDemandesAutomatiques(ByVal docSource As Document) As Stri
         modLog.LogInfo "Validation : aucune demande d'examen reperee"
         Exit Function
     End If
+    ' [DERIVEES] MemeDocument=1 : chaque lettre de demande est AJOUTEE a la
+    ' suite du courrier principal (saut de page), comme dans l'ancien modele :
+    ' un seul fichier, relu et imprime d'un bloc par le secretariat. Une
+    ' nouvelle finalisation remplace les demandes ajoutees precedemment.
+    Dim memeDoc As Boolean
+    memeDoc = modConfig.ConfigBool("DERIVEES", "MemeDocument", True)
+    If memeDoc Then RetirerDemandesAjoutees docSource
     For Each dm In demandes
         On Error GoTo ErreurDemande
         Set p = ChargerProfil(dm("Code"))
@@ -539,6 +546,10 @@ Public Function GenererDemandesAutomatiques(ByVal docSource As Document) As Stri
         Set nouveau = modDerivees.GenererDepuisProfil(docSource, p, dest, "", "", dm("Phrases"))
         If nouveau Is Nothing Then
             rapport = rapport & "- " & libelle & " : non générée (anonymisation refusée)" & vbCrLf
+        ElseIf memeDoc Then
+            AjouterAuDocument docSource, nouveau
+            nouveau.Close False
+            rapport = rapport & "- " & libelle & " -> " & dest("NomDestinataire") & " : ajoutée à la suite du courrier" & vbCrLf
         Else
             If modConfig.ConfigBool("DERIVEES", "AutoValider", True) Then
                 modValidation.ValiderDocument nouveau, True
@@ -556,4 +567,40 @@ ErreurDemande:
     modLog.LogErreur "Demande automatique " & dm("Code") & " : " & Err.Description
     rapport = rapport & "- " & dm("Code") & " : ERREUR " & Err.Description & vbCrLf
     Resume SuiteDemande
+End Function
+
+' Ajoute le contenu d'une lettre de demande a la fin du document principal,
+' apres un saut de page. Le debut de la zone ajoutee est marque par le
+' signet DEMANDES_DEBUT (pose une seule fois) pour pouvoir la remplacer.
+Private Sub AjouterAuDocument(ByVal docPrincipal As Document, ByVal lettre As Document)
+    Dim rng As Range, debut As Long
+    Set rng = docPrincipal.Content
+    rng.Collapse wdCollapseEnd
+    rng.InsertParagraphAfter
+    Set rng = docPrincipal.Content
+    rng.Collapse wdCollapseEnd
+    debut = rng.Start
+    rng.InsertBreak wdPageBreak
+    Set rng = docPrincipal.Content
+    rng.Collapse wdCollapseEnd
+    rng.FormattedText = lettre.Content.FormattedText
+    If Not docPrincipal.Bookmarks.Exists("DEMANDES_DEBUT") Then
+        docPrincipal.Bookmarks.Add "DEMANDES_DEBUT", docPrincipal.Range(debut, debut)
+    End If
+    docPrincipal.Variables("DemandesAjoutees") = CStr(Val(VariableDoc(docPrincipal, "DemandesAjoutees")) + 1)
+End Sub
+
+' Retire les demandes ajoutees par une finalisation precedente
+Private Sub RetirerDemandesAjoutees(ByVal doc As Document)
+    On Error Resume Next
+    If Not doc.Bookmarks.Exists("DEMANDES_DEBUT") Then Exit Sub
+    doc.Range(doc.Bookmarks("DEMANDES_DEBUT").Range.Start, doc.Content.End).Delete
+    doc.Bookmarks("DEMANDES_DEBUT").Delete
+    doc.Variables("DemandesAjoutees") = "0"
+End Sub
+
+Private Function VariableDoc(ByVal doc As Document, ByVal nom As String) As String
+    On Error Resume Next
+    VariableDoc = doc.Variables(nom).Value
+    Err.Clear
 End Function

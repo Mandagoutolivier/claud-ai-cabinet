@@ -199,17 +199,23 @@ End Function
 ' Commande principale : CORRIGER LE COURRIER (Ctrl+Alt+Maj+C / voix)
 ' =====================================================================
 Public Sub CorrigerCourrier()
+    CorrigerDocument ActiveDocument, False
+End Sub
+
+' Corps de la correction, reutilisable par FinaliserCourrier (une touche :
+' corriger + demandes + enregistrer + transmettre). Renvoie True si le
+' texte a ete remplace. silencieux : pas de message de succes.
+Public Function CorrigerDocument(ByVal doc As Document, ByVal silencieux As Boolean) As Boolean
     On Error GoTo Erreur
-    Dim doc As Document, pat As Object, cor As Object, ctx As Object
+    Dim pat As Object, cor As Object, ctx As Object
     Dim corps As String, anonyme As String, problemes As String
     Dim reponse As String, final As String, prog As ufProgression
 
-    Set doc = ActiveDocument
     Set pat = PatientDuDocument(doc)
     If pat Is Nothing Then
         MsgBox "Ce document n'est pas rattache a un patient : appuyez sur F6 (ou Ctrl+Alt+P) pour le choisir.", _
                vbExclamation, "Cabinet"
-        Exit Sub
+        Exit Function
     End If
     Set cor = CorrespondantDuDocument(doc)
     If cor Is Nothing Then
@@ -222,7 +228,7 @@ Public Sub CorrigerCourrier()
     corps = modCourrier.RecupererCorps(doc)
     If Len(Trim$(corps)) < 10 Then
         MsgBox "Le corps du courrier est vide : dictez d'abord votre texte.", vbExclamation, "Cabinet"
-        Exit Sub
+        Exit Function
     End If
 
     ' 1. substitutions locales (macros historiques)
@@ -236,7 +242,7 @@ Public Sub CorrigerCourrier()
         If MsgBox("L'anonymisation a detecte un risque avant envoi :" & vbCrLf & vbCrLf & _
                   problemes & vbCrLf & "Envoyer QUAND MEME a l'API ?", _
                   vbYesNo + vbExclamation + vbDefaultButton2, "Cabinet - protection des donnees") <> vbYes Then
-            Exit Sub
+            Exit Function
         End If
         modLog.LogInfo "Envoi force malgre scan residuel : " & Replace(problemes, vbCrLf, " / ")
     End If
@@ -257,7 +263,7 @@ Public Sub CorrigerCourrier()
         modFichiers.EcrireTexteUTF8 modConfig.Chemin("Logs") & "\reponse_rejetee.txt", reponse
         MsgBox "La reponse de l'API a altere des balises d'identite ; le texte n'a PAS ete insere." & _
                vbCrLf & problemes, vbCritical, "Cabinet"
-        Exit Sub
+        Exit Function
     End If
 
     ' 5. reinjection + archivage du brouillon + remplacement (annulable)
@@ -274,22 +280,23 @@ Public Sub CorrigerCourrier()
     If Err.Number <> 0 Then modLog.LogErreur "Gras apres correction : " & Err.Description
     On Error GoTo Erreur
     ur.EndCustomRecord
-    Application.StatusBar = "Courrier corrige, " & nGras & " mise(s) en gras (Ctrl+Z pour revenir a la dictee brute)."
-    Exit Sub
+    If Not silencieux Then Application.StatusBar = "Courrier corrige, " & nGras & " mise(s) en gras (Ctrl+Z pour revenir a la dictee brute)."
+    CorrigerDocument = True
+    Exit Function
 
 ErreurApi:
     Dim descApi As String
     descApi = Err.Description
     If Not prog Is Nothing Then Unload prog
     MsgBox descApi, vbCritical, "Cabinet - correction impossible"
-    Exit Sub
+    Exit Function
 Erreur:
     Dim descErr As String, numErr As Long
     descErr = Err.Description: numErr = Err.Number
     If Not prog Is Nothing Then Unload prog
     modLog.LogErreur "CorrigerCourrier : erreur " & numErr & " : " & descErr
     MsgBox "Erreur : " & descErr, vbCritical, "Cabinet"
-End Sub
+End Function
 
 ' Normalisation de la reponse : fins de ligne Word ; les lignes vides entre
 ' paragraphes (habitude de l'IA) sont supprimees - dans les courriers du

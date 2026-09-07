@@ -181,6 +181,9 @@ function Build-Word {
                 @{ k = 71;  m = 'EnvoyerECG' },         # Ctrl+Alt+G
                 @{ k = 86;  m = 'ValiderCourrier' },    # Ctrl+Alt+V
                 @{ k = 66;  m = 'MettreEnGras' },       # Ctrl+Alt+B
+                @{ k = 65;  m = 'AllerDestinataire'; maj = $true },  # Ctrl+Alt+Maj+A (bouton A PowerMic)
+                @{ k = 66;  m = 'AllerAppel'; maj = $true },         # Ctrl+Alt+Maj+B (bouton B)
+                @{ k = 68;  m = 'FinaliserCourrier'; maj = $true },  # Ctrl+Alt+Maj+D (bouton D : tout en une touche)
                 @{ k = 123; m = 'SondeRaccourci' })) {  # Ctrl+Alt+F12 (test fonctionnel)
             if ($kb.brut) { $code = $kb.k } else { $code = 512 + 1024 + $kb.k }
             if ($kb.maj) { $code += 256 }   # wdKeyShift

@@ -46,6 +46,18 @@ Public Sub CAB_MettreEnGras()
     CAB_Relais "MettreEnGras"
 End Sub
 
+Public Sub CAB_AllerDestinataire()
+    CAB_Relais "AllerDestinataire"
+End Sub
+
+Public Sub CAB_AllerAppel()
+    CAB_Relais "AllerAppel"
+End Sub
+
+Public Sub CAB_FinaliserCourrier()
+    CAB_Relais "FinaliserCourrier"
+End Sub
+
 Public Sub CAB_Aide()
     CAB_Relais "AideCabinet"
 End Sub

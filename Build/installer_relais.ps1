@@ -45,6 +45,9 @@ try {
         @{ k = 71;  m = 'CAB_EnvoyerECG' },        # Ctrl+Alt+G
         @{ k = 86;  m = 'CAB_ValiderCourrier' },   # Ctrl+Alt+V
         @{ k = 66;  m = 'CAB_MettreEnGras' },      # Ctrl+Alt+B
+        @{ k = 65;  m = 'CAB_AllerDestinataire'; maj = $true },  # Ctrl+Alt+Maj+A
+        @{ k = 66;  m = 'CAB_AllerAppel'; maj = $true },         # Ctrl+Alt+Maj+B
+        @{ k = 68;  m = 'CAB_FinaliserCourrier'; maj = $true },  # Ctrl+Alt+Maj+D
         @{ k = 123; m = 'CAB_Sonde' })             # Ctrl+Alt+F12 (test)
     # liberer Ctrl+Alt+C si une version precedente du relais l'avait pris
     try {

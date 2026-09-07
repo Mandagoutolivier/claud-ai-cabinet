@@ -480,6 +480,32 @@ Private Function VariableDoc(ByVal doc As Document, ByVal nom As String) As Stri
     Err.Clear
 End Function
 
+' Boutons A / B du PowerMic : se placer dans le bloc destinataire, dans la
+' formule d'appel (les signets du modele), sans clavier ni souris.
+Public Sub AllerDestinataire()
+    AllerAuSignet "DESTINATAIRE"
+End Sub
+
+Public Sub AllerAppel()
+    AllerAuSignet "APPEL"
+End Sub
+
+Public Sub AllerCorps()
+    PlacerCurseurCorps ActiveDocument
+End Sub
+
+Private Sub AllerAuSignet(ByVal nom As String)
+    On Error Resume Next
+    Dim rng As Range
+    If Not ActiveDocument.Bookmarks.Exists(nom) Then
+        MsgBox "Signet " & nom & " absent de ce document (courrier cree par 'Nouveau courrier' ?).", vbExclamation, "Cabinet"
+        Exit Sub
+    End If
+    Set rng = ActiveDocument.Bookmarks(nom).Range
+    ' selectionner le contenu (un espace ou le texte existant) : dicter le remplace
+    If Len(Trim$(rng.Text)) = 0 Then rng.Select Else rng.Select
+End Sub
+
 ' Depannage : resserrer le bloc adresse d'un courrier DEJA ouvert.
 ' Sans signet DESTINATAIRE, agit sur les paragraphes selectionnes.
 Public Sub ResserrerDestinataire()
