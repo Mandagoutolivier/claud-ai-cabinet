@@ -53,7 +53,7 @@ Erreur:
 End Sub
 
 Private Function Colonnes(ByVal ws As Worksheet) As Object
-    Dim d As Object, c As Long, nom As String
+    Dim d As Object, c As Long, nom As Variant
     Set d = CreateObject("Scripting.Dictionary")
     d.CompareMode = 1
     For c = 1 To ws.UsedRange.Columns.Count + 2
