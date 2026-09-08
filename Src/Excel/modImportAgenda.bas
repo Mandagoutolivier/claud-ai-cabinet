@@ -52,6 +52,66 @@ Erreur:
     MsgBox "Import interrompu : " & Err.Description, vbCritical, "Cabinet"
 End Sub
 
+' Annule les RDV crees par un import precedent (colonne Resultat = "OK R...")
+' et vide la colonne Resultat : le classeur peut alors etre corrige (duree,
+' noms) et reimporte sans doublon. Les fiches provisoires creees sont
+' conservees (elles seront retrouvees par nom au reimport).
+Public Sub UI_AnnulerImportAgenda()
+    On Error GoTo Erreur
+    Dim chemin As Variant, wb As Workbook, ws As Worksheet, r As Long, derniere As Long
+    Dim col As Object, res As String, id As String, n As Long, nKo As Long, annee As Long
+    chemin = Application.GetOpenFilename("Classeur Excel (*.xlsx),*.xlsx", , "Classeur d'agenda deja importe")
+    If chemin = False Then Exit Sub
+    If MsgBox("Annuler dans l'agenda du cabinet TOUS les rendez-vous marques OK dans" & vbCrLf & chemin & vbCrLf & vbCrLf & _
+              "puis vider la colonne Resultat pour permettre un nouvel import ?", _
+              vbYesNo + vbExclamation + vbDefaultButton2, "Cabinet - annulation d'un import") <> vbYes Then Exit Sub
+    Set wb = Workbooks.Open(CStr(chemin))
+    Set ws = wb.Worksheets("RDV")
+    Set col = Colonnes(ws)
+    derniere = ws.Cells(ws.Rows.Count, 1).End(-4162).Row
+    Application.ScreenUpdating = False
+    For r = 2 To derniere
+        res = Val_(ws, r, col, "Resultat")
+        If Left$(res, 3) = "OK " Then
+            id = Mid$(res, 4)
+            If InStr(id, " ") > 0 Then id = Left$(id, InStr(id, " ") - 1)
+            annee = Val(Right$(DateTexte(ws.Cells(r, col("Date")).Value), 4))
+            If AnnulerRdvImporte(id, annee) Then
+                n = n + 1
+                ws.Cells(r, col("Resultat")).Value = ""
+            Else
+                nKo = nKo + 1
+                ws.Cells(r, col("Resultat")).Value = "ANNULATION IMPOSSIBLE : " & res
+            End If
+        ElseIf Len(res) > 0 Then
+            ws.Cells(r, col("Resultat")).Value = ""
+        End If
+    Next r
+    Application.ScreenUpdating = True
+    wb.Save
+    On Error Resume Next
+    modAgendaVue.InvaliderPatients
+    On Error GoTo Erreur
+    MsgBox n & " rendez-vous annule(s)" & IIf(nKo > 0, ", " & nKo & " non retrouve(s)", "") & "." & vbCrLf & _
+           "Corrigez le classeur puis relancez 'Importer un agenda (xlsx)'.", vbInformation, "Cabinet"
+    Exit Sub
+Erreur:
+    Application.ScreenUpdating = True
+    MsgBox "Annulation interrompue : " & Err.Description, vbCritical, "Cabinet"
+End Sub
+
+Private Function AnnulerRdvImporte(ByVal rdvID As String, ByVal annee As Long) As Boolean
+    On Error GoTo Erreur
+    Dim rdv As Object
+    Set rdv = modAgenda.RdvParID(rdvID, annee)
+    If rdv Is Nothing Then Exit Function
+    If rdv("Statut") = "Annule" Then AnnulerRdvImporte = True: Exit Function
+    modAgenda.MarquerStatut rdvID, "Annule", annee
+    AnnulerRdvImporte = True
+    Exit Function
+Erreur:
+End Function
+
 Private Function Colonnes(ByVal ws As Worksheet) As Object
     Dim d As Object, c As Long, nom As Variant
     Set d = CreateObject("Scripting.Dictionary")
