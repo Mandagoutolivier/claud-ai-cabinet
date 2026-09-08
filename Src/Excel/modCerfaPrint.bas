@@ -45,6 +45,17 @@ Private Function AjouterTexte(ByVal doc As Object, ByVal xmm As Double, ByVal ym
     Set AjouterTexte = shp
 End Function
 
+' Champ a cases (dates JJMMAAAA, NIR) : un caractere par case, au pas
+' 'pas' mm ; les separateurs / . espace sont retires.
+Private Sub AjouterTexteCases(ByVal doc As Object, ByVal xmm As Double, ByVal ymm As Double, _
+                              ByVal pas As Double, ByVal taille As Double, ByVal texte As String)
+    Dim t As String, i As Long
+    t = Replace(Replace(Replace(texte, "/", ""), ".", ""), " ", "")
+    For i = 1 To Len(t)
+        AjouterTexte doc, xmm + (i - 1) * pas, ymm, pas + 2, taille, Mid$(t, i, 1)
+    Next i
+End Sub
+
 Private Sub AjouterLigne(ByVal doc As Object, ByVal x1 As Double, ByVal y1 As Double, _
                          ByVal x2 As Double, ByVal y2 As Double, ByVal epais As Double)
     Dim shp As Object
@@ -169,7 +180,11 @@ Private Sub ImprimerDocumentCale(ByVal valeurs As Object, ByVal versPdf As Strin
     For Each p In positions
         If valeurs.Exists(CStr(p(0))) Then
             If Len(CStr(valeurs(p(0)))) > 0 Then
-                AjouterTexte doc, CDbl(p(1)) + dx, CDbl(p(2)) + dy, CDbl(p(3)), CDbl(p(4)), CStr(valeurs(p(0)))
+                If CDbl(p(5)) > 0 Then
+                    AjouterTexteCases doc, CDbl(p(1)) + dx, CDbl(p(2)) + dy, CDbl(p(5)), CDbl(p(4)), CStr(valeurs(p(0)))
+                Else
+                    AjouterTexte doc, CDbl(p(1)) + dx, CDbl(p(2)) + dy, CDbl(p(3)), CDbl(p(4)), CStr(valeurs(p(0)))
+                End If
             End If
         End If
     Next p
@@ -313,9 +328,12 @@ Private Function LirePositions() As Collection
         If Len(Trim$(lignes(i))) > 0 And Left$(Trim$(lignes(i)), 1) <> "#" Then
             parties = Split(lignes(i), ";")
             If UBound(parties) >= 4 Then
+                Dim pas As Double
+                pas = 0
+                If UBound(parties) >= 5 Then pas = Val(Replace(parties(5), ",", "."))
                 col.Add Array(Trim$(parties(0)), Val(Replace(parties(1), ",", ".")), _
                               Val(Replace(parties(2), ",", ".")), Val(Replace(parties(3), ",", ".")), _
-                              Val(Replace(parties(4), ",", ".")))
+                              Val(Replace(parties(4), ",", ".")), pas)
             End If
         End If
     Next i

@@ -1,37 +1,36 @@
 # Positions d'impression sur la feuille de soins pre-imprimee (cerfa S3110).
-# Format : CHAMP;x_mm;y_mm;largeur_mm;taille_police
-# Origine = coin superieur gauche de la feuille. A CALER sur votre liasse :
-# 1) bouton "Grille de calage CERFA" : imprime sur une liasse sacrifiee une grille
-#    graduee en mm et le nom de chaque champ a sa position actuelle ;
-# 2) lisez sur la grille x (depuis la gauche) et y (depuis le haut) du coin
-#    haut-gauche de chaque case et corrigez les lignes ci-dessous ;
-# 3) si l'ensemble est retourne : [CERFA] Rotation180=1 dans config.ini ;
-#    si l'ensemble est decale d'un meme ecart : bouton "Calage imprimante CERFA".
-# Les valeurs ci-dessous sont INDICATIVES et doivent etre relevees sur la liasse.
-# Un champ absent de ce fichier n'est simplement pas imprime : les rubriques
-# deja pre-imprimees sur vos formulaires personnalises n'ont pas a y figurer.
+# Format : CHAMP;x_mm;y_mm;largeur_mm;taille_police[;pas_cases_mm]
+# Origine = coin superieur gauche de la feuille (A4 210 x 297 mm).
+# pas_cases_mm (facultatif) : champ a cases (date JJMMAAAA, NIR) : un
+#   caractere par case, au pas indique ; les / sont retires a l'impression.
+# Valeurs relevees le 08/09/2026 sur la photo de la liasse du cabinet
+# (precision +/- 2 mm) : a affiner avec le bouton "Grille de calage CERFA"
+# (grille graduee + nom de chaque champ a sa position), puis "Calage
+# imprimante CERFA" pour le decalage global de l'imprimante.
+# Si l'ensemble sort retourne : [CERFA] Rotation180=1 dans config.ini.
+# Un champ absent de ce fichier n'est simplement pas imprime.
 # Le nombre de lignes d'actes imprimables est fixe par [CERFA] LignesMax.
-# --- Assure (celui qui ouvre droit) ---
-ASSURE_NOM;25;42;95;10
-ASSURE_NIR;118;36;85;11
-ASSURE_DDN;118;46;45;10
-# --- Patient qui recoit les soins (rubrique distincte quand ce n'est pas l'assure ;
-#     positions a relever sur votre liasse, les valeurs ci-dessous sont indicatives) ---
-PATIENT_NOM;25;58;95;10
-PATIENT_DDN;118;58;45;10
-PATIENT_NIR;118;66;85;10
+# --- Personne recevant les soins ---
+PATIENT_NOM;30;28.5;160;10
+PATIENT_NIR;43;35.5;95;10;6
+PATIENT_DDN;57.5;44.5;40;10;4.75
+# --- Assure(e) (si different du patient) ---
+ASSURE_NOM;30;53.5;160;10
+ASSURE_NIR;43;61.5;95;10;6
 # --- Parcours de soins : medecin traitant du patient adresse ---
-MEDECIN_TRAITANT;25;76;120;9
-DATE1;22;168;20;9
-CODE1;48;168;35;9
-MONTANT1;150;168;28;9
-DATE2;22;176;20;9
-CODE2;48;176;35;9
-MONTANT2;150;176;28;9
-DATE3;22;184;20;9
-CODE3;48;184;35;9
-MONTANT3;150;184;28;9
-DATE4;22;192;20;9
-CODE4;48;192;35;9
-MONTANT4;150;192;28;9
-TOTAL;150;208;28;10
+MEDECIN_TRAITANT;62;164;130;9
+# --- Actes effectues (4 lignes, pas 9.3 mm) ---
+DATE1;9.5;208;30;9;3.6
+CODE1;42;208;33;9
+MONTANT1;131;208;19;9
+DATE2;9.5;217.3;30;9;3.6
+CODE2;42;217.3;33;9
+MONTANT2;131;217.3;19;9
+DATE3;9.5;226.6;30;9;3.6
+CODE3;42;226.6;33;9
+MONTANT3;131;226.6;19;9
+DATE4;9.5;235.9;30;9;3.6
+CODE4;42;235.9;33;9
+MONTANT4;131;235.9;19;9
+# --- Paiement ---
+TOTAL;110;246;36;10
