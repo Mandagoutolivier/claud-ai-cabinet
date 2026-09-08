@@ -249,7 +249,7 @@ Public Function SignalerArrivee(ByVal pat As Object, Optional ByVal rdvID As Str
     d("PatientID") = pat("ID")
     d("Nom") = pat("Nom")
     d("Prenom") = pat("Prenom")
-    d("DDN") = pat("DDN")
+    d("DDN") = modTexte.DdnPatient(pat)
     If pat.Exists("MedTraitantID") Then d("MedTraitantID") = pat("MedTraitantID")
     d("RdvID") = rdvID
     d("HeureRdv") = heureRdv

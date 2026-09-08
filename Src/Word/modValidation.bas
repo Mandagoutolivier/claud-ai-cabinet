@@ -114,7 +114,7 @@ Public Function ValiderDocument(ByVal doc As Document, ByVal silencieux As Boole
     d("PatientID") = pat("ID")
     d("Nom") = pat("Nom")
     d("Prenom") = pat("Prenom")
-    d("DDN") = pat("DDN")
+    d("DDN") = modTexte.DdnPatient(pat)
     d("NIR") = pat("NIR")
     d("TypeCourrier") = typeCourrier
     d("ConsultationID") = consultationID

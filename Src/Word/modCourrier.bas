@@ -112,8 +112,8 @@ Public Function CreerCourrierRapidePour(ByVal pat As Object) As Document
     Set doc = CreerCourrierRapide()
     doc.Variables("PatientID") = pat("ID")
     If doc.Bookmarks.Exists("CONCERNE") Then
-        RemplirSignet doc, "CONCERNE", "Concerne : " & modTexte.CiviliteCourte(pat("Sexe")) & " " & _
-            pat("Prenom") & " " & pat("Nom") & ", " & modTexte.NeLe(pat("Sexe")) & " " & pat("DDN")
+        RemplirSignet doc, "CONCERNE", "Concerne : " & Trim$(modTexte.CiviliteCourte(modTexte.SexePatient(pat)) & " " & _
+            pat("Prenom") & " " & pat("Nom")) & ", " & modTexte.NeLe(modTexte.SexePatient(pat)) & " " & modTexte.DdnPatient(pat)
     End If
     Set CreerCourrierRapidePour = doc
 End Function
@@ -157,8 +157,8 @@ Private Sub RemplirEnTeteSansDestinataire(ByVal doc As Document)
     MettreEnFormeDestinataire doc
     RemplirSignet doc, "DATELIEU", modConfig.Config("GENERAL", "Ville") & ", le " & Format$(Date, "d mmmm yyyy")
     RemplirSignet doc, "CONCERNE", ""
-    RemplirSignet doc, "APPEL", AppelParDefaut(False)
-    RemplirSignet doc, "POLITESSE", PolitesseParDefaut(False)
+    RemplirSignet doc, "APPEL", IIf(AppelAuto(), AppelParDefaut(False), " ")
+    If PolitesseAuto() Then RemplirSignet doc, "POLITESSE", PolitesseParDefaut(False)
     RemplirSignet doc, "SIGNATURE", signature
 End Sub
 
@@ -280,7 +280,7 @@ Public Sub NormaliserModele(ByVal doc As Document)
         AppliquerEspacement doc, "CORPS"
     End If
     If Not doc.Bookmarks.Exists("POLITESSE") And doc.Bookmarks.Exists("CORPS") Then
-        If modConfig.ConfigNum("COURRIER", "PolitesseAuto", 1) = 1 Then
+        If PolitesseAuto() Then
             Set pSuiv = doc.Bookmarks("CORPS").Range.Paragraphs(1)
             pSuiv.Range.InsertParagraphAfter
             Set pSuiv = pSuiv.Next
@@ -323,11 +323,17 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
         destinataire = destinataire & vbCr & cor("CP") & " " & cor("Ville")
     End If
 
-    concerne = "Concerne : " & modTexte.CiviliteCourte(pat("Sexe")) & " " & _
-               pat("Prenom") & " " & pat("Nom") & ", " & modTexte.NeLe(pat("Sexe")) & " " & pat("DDN")
+    concerne = "Concerne : " & Trim$(modTexte.CiviliteCourte(modTexte.SexePatient(pat)) & " " & _
+               pat("Prenom") & " " & pat("Nom")) & ", " & modTexte.NeLe(modTexte.SexePatient(pat)) & " " & modTexte.DdnPatient(pat)
 
-    appel = cor("FormuleAppel")
-    If Len(appel) = 0 Then appel = AppelParDefaut(EstTutoye(cor))
+    ' [COURRIER] AppelAuto=0 (defaut) : la formule d'appel n'est PAS
+    ' pre-remplie, le medecin la dicte au signet APPEL (bouton B / Ctrl+Alt+Maj+B)
+    If AppelAuto() Then
+        appel = cor("FormuleAppel")
+        If Len(appel) = 0 Then appel = AppelParDefaut(EstTutoye(cor), cor)
+    Else
+        appel = " "
+    End If
 
     signature = Replace(modConfig.Config("MEDECIN", "Signature", ""), "|", vbCr)
     If Len(signature) = 0 Then
@@ -336,8 +342,10 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
     End If
 
     Dim politesse As String
-    politesse = cor("FormulePolitesse")
-    If Len(politesse) = 0 Then politesse = PolitesseParDefaut(EstTutoye(cor))
+    If PolitesseAuto() Then
+        politesse = cor("FormulePolitesse")
+        If Len(politesse) = 0 Then politesse = PolitesseParDefaut(EstTutoye(cor))
+    End If
 
     RemplirSignet doc, "EXPEDITEUR", expediteur
     ' l'adresse est UN SEUL paragraphe : tous les separateurs de ligne
@@ -349,7 +357,7 @@ Public Sub RemplirEnTete(ByVal doc As Document, ByVal pat As Object, ByVal cor A
     RemplirSignet doc, "DATELIEU", modConfig.Config("GENERAL", "Ville") & ", le " & Format$(Date, "d mmmm yyyy")
     RemplirSignet doc, "CONCERNE", concerne
     RemplirSignet doc, "APPEL", appel
-    RemplirSignet doc, "POLITESSE", politesse
+    If Len(politesse) > 0 Then RemplirSignet doc, "POLITESSE", politesse
     RemplirSignet doc, "SIGNATURE", signature
 End Sub
 
@@ -370,12 +378,30 @@ End Function
 ' Defauts du cabinet (decisions du 04/09/2026) : "Cher Ami" pour les
 ' correspondants proches (tutoyes), "Cher Confrère" sinon ;
 ' "Bien cordialement" au tutoiement, "Bien confraternellement" au vouvoiement.
-Public Function AppelParDefaut(ByVal tutoiement As Boolean) As String
+Public Function AppelParDefaut(ByVal tutoiement As Boolean, Optional ByVal cor As Object = Nothing) As String
+    Dim femme As Boolean
+    If Not cor Is Nothing Then femme = (modTexte.SexePatient(cor) = "F")
     If tutoiement Then
-        AppelParDefaut = modConfig.Config("COURRIER", "AppelProche", "Cher Ami,")
+        If femme Then
+            AppelParDefaut = modConfig.Config("COURRIER", "AppelProcheF", "Chère Amie,")
+        Else
+            AppelParDefaut = modConfig.Config("COURRIER", "AppelProche", "Cher Ami,")
+        End If
+    ElseIf femme Then
+        AppelParDefaut = modConfig.Config("COURRIER", "AppelDefautF", "Chère Consœur,")
     Else
         AppelParDefaut = modConfig.Config("COURRIER", "AppelDefaut", "Cher Confrère,")
     End If
+End Function
+
+' [COURRIER] AppelAuto / PolitesseAuto (0 par defaut depuis le 08/09/2026 :
+' le medecin dicte lui-meme l'appel et la politesse)
+Public Function AppelAuto() As Boolean
+    AppelAuto = (modConfig.ConfigNum("COURRIER", "AppelAuto", 0) = 1)
+End Function
+
+Public Function PolitesseAuto() As Boolean
+    PolitesseAuto = (modConfig.ConfigNum("COURRIER", "PolitesseAuto", 0) = 1)
 End Function
 
 Public Function PolitesseParDefaut(ByVal tutoiement As Boolean) As String
@@ -400,8 +426,8 @@ Public Sub InsererPatient()
         doc.Variables("PatientID") = pat("ID")
         If Len(VariableDoc(doc, "TypeCourrier")) = 0 Then doc.Variables("TypeCourrier") = "consultation"
         If doc.Bookmarks.Exists("CONCERNE") Then
-            RemplirSignet doc, "CONCERNE", "Concerne : " & modTexte.CiviliteCourte(pat("Sexe")) & " " & _
-                pat("Prenom") & " " & pat("Nom") & ", " & modTexte.NeLe(pat("Sexe")) & " " & pat("DDN")
+            RemplirSignet doc, "CONCERNE", "Concerne : " & Trim$(modTexte.CiviliteCourte(modTexte.SexePatient(pat)) & " " & _
+                pat("Prenom") & " " & pat("Nom")) & ", " & modTexte.NeLe(modTexte.SexePatient(pat)) & " " & modTexte.DdnPatient(pat)
         End If
     End If
     ' l'identite va dans le CORPS : si le curseur est ailleurs (bloc adresse
@@ -420,8 +446,8 @@ End Sub
 ' Ex : "Monsieur Jean FABREGUE, 91 ans"
 Public Function TexteIdentitePatient(ByVal pat As Object) As String
     Dim age As String
-    age = CalculerAge(pat("DDN"))
-    TexteIdentitePatient = modTexte.Civilite(pat("Sexe")) & " " & pat("Prenom") & " " & pat("Nom") & _
+    age = CalculerAge(modTexte.DdnPatient(pat))
+    TexteIdentitePatient = Trim$(modTexte.Civilite(modTexte.SexePatient(pat)) & " " & pat("Prenom") & " " & pat("Nom")) & _
                            IIf(Len(age) > 0, ", " & age & " ans", "")
 End Function
 

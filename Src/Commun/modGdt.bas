@@ -46,11 +46,11 @@ Public Function ConstruireGdt(ByVal pat As Object) As String
     lignes.Add LigneGdt("3101", UCase$(pat("Nom")))
     lignes.Add LigneGdt("3102", pat("Prenom"))
     Dim ddn As String, sexe As String
-    ddn = DdnVersGdt(pat("DDN"))
+    ddn = DdnVersGdt(modTexte.DdnPatient(pat))
     If Len(ddn) > 0 Then
         lignes.Add LigneGdt("3103", ddn)
     Else
-        modLog.LogErreur "GDT " & pat("ID") & " : date de naissance absente ou illisible ('" & pat("DDN") & "') - a completer dans la fiche"
+        modLog.LogErreur "GDT " & pat("ID") & " : date de naissance absente ou illisible ('" & modTexte.DdnPatient(pat) & "') - a completer dans la fiche"
     End If
     ' 3110 sexe (1 = masculin, 2 = feminin) : utile aux normes ECG, et donne
     ' au logiciel ECG une fiche complete des l'import
@@ -111,12 +111,8 @@ End Function
 
 ' Sexe de la fiche -> code GDT : M/H/1/Masculin/Homme -> 1, F/2/Feminin/Femme -> 2
 Private Function SexeVersGdt(ByVal pat As Object) As String
-    Dim v As String
-    If Not pat.Exists("Sexe") Then Exit Function
-    v = UCase$(Trim$(pat("Sexe")))
-    If Len(v) = 0 Then Exit Function
-    Select Case Left$(v, 1)
-        Case "M", "H", "1": SexeVersGdt = "1"
-        Case "F", "2":      SexeVersGdt = "2"
+    Select Case modTexte.SexePatient(pat)
+        Case "M": SexeVersGdt = "1"
+        Case "F": SexeVersGdt = "2"
     End Select
 End Function

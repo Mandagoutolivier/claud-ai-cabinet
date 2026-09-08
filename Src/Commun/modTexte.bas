@@ -26,17 +26,78 @@ Public Function Plier(ByVal s As String) As String
     Plier = res
 End Function
 
-' Civilite d'apres le sexe (M/F)
+' --- Sexe / civilite ---------------------------------------------------
+' Le sexe des fiches est saisi de facons variees (M/F, H, Mme, Madame,
+' Monsieur, Homme/Femme, 1/2, Masculin/Feminin...). Tout passe par
+' SexeNormalise -> "M", "F" ou "" (inconnu). Un sexe INCONNU ne donne
+' plus "Monsieur" par defaut : pas de civilite, "ne(e) le".
+Public Function SexeNormalise(ByVal v As String) As String
+    Dim t As String
+    t = Plier(Trim$(v))
+    If Len(t) = 0 Then Exit Function
+    Select Case t
+        Case "mme", "madame", "mlle", "mademoiselle", "femme", "feminin", "f", "2", "w", "woman", "female"
+            SexeNormalise = "F"
+        Case "m", "m.", "mr", "monsieur", "homme", "masculin", "h", "1", "male", "man"
+            SexeNormalise = "M"
+        Case Else
+            If Left$(t, 1) = "f" Then
+                SexeNormalise = "F"
+            ElseIf Left$(t, 2) = "mm" Or Left$(t, 2) = "ml" Or Left$(t, 3) = "mad" Then
+                SexeNormalise = "F"
+            ElseIf Left$(t, 1) = "m" Or Left$(t, 1) = "h" Then
+                SexeNormalise = "M"
+            End If
+    End Select
+End Function
+
+' Sexe d'une fiche (patient ou correspondant), quelle que soit la colonne
+' utilisee : Sexe, Civilite, Genre, Titre (Mme/M./Dr sans info).
+Public Function SexePatient(ByVal pat As Object) As String
+    Dim k As Variant
+    If pat Is Nothing Then Exit Function
+    For Each k In Array("Sexe", "Civilite", "Genre", "Sex", "Titre")
+        If pat.Exists(k) Then
+            SexePatient = SexeNormalise(CStr(pat(k)))
+            If Len(SexePatient) > 0 Then Exit Function
+        End If
+    Next k
+End Function
+
+' Date de naissance d'une fiche, quelle que soit la colonne (DDN,
+' DateNaissance, Date de naissance, Naissance, NeLe).
+Public Function DdnPatient(ByVal pat As Object) As String
+    Dim k As Variant
+    If pat Is Nothing Then Exit Function
+    For Each k In Array("DDN", "DateNaissance", "Date de naissance", "Date naissance", "Naissance", "NeLe", "DateDeNaissance")
+        If pat.Exists(k) Then
+            DdnPatient = Trim$(CStr(pat(k)))
+            If Len(DdnPatient) > 0 Then Exit Function
+        End If
+    Next k
+End Function
+
+' Civilite d'apres le sexe (M/F, ou toute valeur normalisable) ; "" si inconnu
 Public Function Civilite(ByVal sexe As String) As String
-    If UCase$(Left$(sexe, 1)) = "F" Then Civilite = "Madame" Else Civilite = "Monsieur"
+    Select Case SexeNormalise(sexe)
+        Case "F": Civilite = "Madame"
+        Case "M": Civilite = "Monsieur"
+    End Select
 End Function
 
 Public Function CiviliteCourte(ByVal sexe As String) As String
-    If UCase$(Left$(sexe, 1)) = "F" Then CiviliteCourte = "Mme" Else CiviliteCourte = "M."
+    Select Case SexeNormalise(sexe)
+        Case "F": CiviliteCourte = "Mme"
+        Case "M": CiviliteCourte = "M."
+    End Select
 End Function
 
 Public Function NeLe(ByVal sexe As String) As String
-    If UCase$(Left$(sexe, 1)) = "F" Then NeLe = "née le" Else NeLe = "né le"
+    Select Case SexeNormalise(sexe)
+        Case "F": NeLe = "née le"
+        Case "M": NeLe = "né le"
+        Case Else: NeLe = "né(e) le"
+    End Select
 End Function
 
 ' ---------------------------------------------------------------------

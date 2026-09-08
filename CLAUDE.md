@@ -15,6 +15,10 @@
   L'installation à distance (WinRM) ne passe pas au cabinet : c'est normal.
 - Ancien poste RDC : à neutraliser (renommer `C:\CabinetCardio`) pour éviter
   deux agendas.
+- Config à retoucher À LA MAIN sur les deux postes (`Config\config.ini`,
+  jamais écrasée) : `[COURRIER] PolitesseAuto=0` (décision 08/09 : appel et
+  politesse dictés, plus de pré-remplissage ; `AppelAuto=0` est ajouté
+  automatiquement).
 - Ensuite : recette `RECETTE_AUDIT.md` (chapitres 2, 4, 5 bis) avant usage
   réel du circuit financier.
 
