@@ -141,11 +141,25 @@ Nettoyage:
     Err.Raise numErr, "modCerfaPrint", descErr
 End Sub
 
-' Impression de croix de reperes puis saisie des ecarts mesures
+' Impression de croix de reperes puis saisie des ecarts mesures.
+' Les croix sont imprimees AVEC le decalage deja enregistre (comme les
+' feuilles de soins) : on peut donc relancer le calage jusqu'a ce que les
+' croix tombent juste ; chaque mesure s'AJOUTE au decalage en vigueur.
 Public Sub CalageCerfa()
-    Dim valeurs As Object, reponse As String, dx As Double, dy As Double
+    Dim reponse As String, dx As Double, dy As Double, ddx As Double, ddy As Double
+    LireOffsets dx, dy
+    If dx <> 0 Or dy <> 0 Then
+        Select Case MsgBox("Decalage actuellement enregistre : dx=" & dx & " mm, dy=" & dy & " mm." & vbCrLf & vbCrLf & _
+                           "Oui = repartir de ZERO (croix sans decalage)" & vbCrLf & _
+                           "Non = garder ce decalage et l'affiner" & vbCrLf & _
+                           "Annuler = quitter", vbYesNoCancel + vbQuestion + vbDefaultButton2, "Calage CERFA")
+            Case vbYes: dx = 0: dy = 0
+            Case vbCancel: Exit Sub
+        End Select
+    End If
     If MsgBox("Placez une feuille de soins SACRIFIEE dans l'imprimante." & vbCrLf & _
-              "Des croix de repere vont s'imprimer aux 4 coins (a 20 mm des bords)." & vbCrLf & vbCrLf & _
+              "Des croix de repere vont s'imprimer aux 4 coins (a 20 mm des bords)," & vbCrLf & _
+              "avec le decalage en vigueur (dx=" & dx & " mm, dy=" & dy & " mm)." & vbCrLf & vbCrLf & _
               "Imprimer maintenant ?", vbOKCancel + vbInformation, "Calage CERFA") <> vbOK Then Exit Sub
 
     Dim word As Object, doc As Object, shp As Object, coords As Variant, c As Variant
@@ -158,8 +172,8 @@ Public Sub CalageCerfa()
     doc.PageSetup.LeftMargin = 0: doc.PageSetup.RightMargin = 0
     coords = Array(Array(20, 20), Array(190, 20), Array(20, 277), Array(190, 277))
     For Each c In coords
-        Set shp = doc.Shapes.AddTextbox(1, (CDbl(c(0)) - 2) * MM_EN_POINTS, _
-                                        (CDbl(c(1)) - 4) * MM_EN_POINTS, 12 * MM_EN_POINTS, 16)
+        Set shp = doc.Shapes.AddTextbox(1, (CDbl(c(0)) - 2 + dx) * MM_EN_POINTS, _
+                                        (CDbl(c(1)) - 4 + dy) * MM_EN_POINTS, 12 * MM_EN_POINTS, 16)
         shp.TextFrame.TextRange.Text = "+"
         shp.TextFrame.TextRange.Font.Size = 14
         shp.TextFrame.MarginLeft = 0: shp.TextFrame.MarginTop = 0
@@ -173,19 +187,23 @@ Public Sub CalageCerfa()
     word.Quit
     On Error GoTo 0
 
-    reponse = InputBox("Mesurez sur la feuille imprimee :" & vbCrLf & _
-        "- ecart HORIZONTAL en mm entre la croix haut-gauche et 20 mm du bord gauche" & vbCrLf & _
-        "  (positif si la croix est trop a droite)", "Calage CERFA - decalage X", "0")
+    reponse = InputBox("Mesurez sur la feuille imprimee, croix HAUT-GAUCHE :" & vbCrLf & _
+        "ecart HORIZONTAL en mm par rapport a 20 mm du bord gauche" & vbCrLf & _
+        "(positif si la croix est trop a DROITE, negatif si trop a gauche ; 0 si juste)", _
+        "Calage CERFA - decalage X", "0")
     If Len(reponse) = 0 Then Exit Sub
-    dx = -Val(Replace(reponse, ",", "."))
-    reponse = InputBox("- ecart VERTICAL en mm entre la croix haut-gauche et 20 mm du bord haut" & vbCrLf & _
-        "  (positif si la croix est trop basse)", "Calage CERFA - decalage Y", "0")
+    ddx = -Val(Replace(reponse, ",", "."))
+    reponse = InputBox("ecart VERTICAL en mm par rapport a 20 mm du bord haut" & vbCrLf & _
+        "(positif si la croix est trop BASSE, negatif si trop haute ; 0 si juste)", _
+        "Calage CERFA - decalage Y", "0")
     If Len(reponse) = 0 Then Exit Sub
-    dy = -Val(Replace(reponse, ",", "."))
+    ddy = -Val(Replace(reponse, ",", "."))
+    dx = dx + ddx: dy = dy + ddy
     modFichiers.EcrireTexteUTF8 modConfig.Chemin("Config") & "\cerfa_offsets.txt", _
         Replace(CStr(dx), ",", ".") & ";" & Replace(CStr(dy), ",", ".")
-    MsgBox "Calage enregistre (dx=" & dx & " mm, dy=" & dy & " mm)." & vbCrLf & _
-           "Refaites une impression d'essai pour verifier.", vbInformation, "Calage CERFA"
+    MsgBox "Calage enregistre : dx=" & dx & " mm, dy=" & dy & " mm" & _
+           IIf(ddx <> 0 Or ddy <> 0, " (correction de " & ddx & " / " & ddy & " mm)", "") & "." & vbCrLf & _
+           "Relancez le calage pour verifier : les croix doivent tomber a 20 mm des bords.", vbInformation, "Calage CERFA"
     Exit Sub
 Nettoyage:
     Dim descErr As String
@@ -220,9 +238,12 @@ Private Function LirePositions() As Collection
     Set LirePositions = col
 End Function
 
+' Decalage global : Config\cerfa_offsets.txt (ecrit par le calage) ;
+' a defaut, [CERFA] OffsetX_mm / OffsetY_mm de config.ini.
 Private Sub LireOffsets(ByRef dx As Double, ByRef dy As Double)
     Dim chemin As String, contenu As String, parties() As String
-    dx = 0: dy = 0
+    dx = modConfig.ConfigNum("CERFA", "OffsetX_mm", 0)
+    dy = modConfig.ConfigNum("CERFA", "OffsetY_mm", 0)
     chemin = modConfig.Chemin("Config") & "\cerfa_offsets.txt"
     If Not modFichiers.FichierExiste(chemin) Then Exit Sub
     contenu = Trim$(Replace(Replace(modFichiers.LireTexteUTF8(chemin), vbCr, ""), vbLf, ""))
