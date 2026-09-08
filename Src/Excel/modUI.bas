@@ -223,6 +223,10 @@ Public Sub UI_CalageCerfa()
     modCerfaPrint.CalageCerfa
 End Sub
 
+Public Sub UI_GrilleCerfa()
+    modCerfaPrint.CalageCerfaGrille
+End Sub
+
 ' Selection d'un patient (version Excel)
 Public Function ChoisirPatientX() As Object
     Dim f As ufListe

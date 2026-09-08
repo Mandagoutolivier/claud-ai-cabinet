@@ -9,6 +9,78 @@ Option Explicit
 
 Private Const MM_EN_POINTS As Double = 2.834645
 
+Private Const PAGE_L_MM As Double = 210
+Private Const PAGE_H_MM As Double = 297
+Private Const BOITE_H_PT As Double = 18
+
+' [CERFA] Rotation180=1 : l'image entiere est retournee de 180 degres
+' (liasse qui ne peut etre inseree que dans un sens dans le bac).
+Private Function Rotation180() As Boolean
+    Rotation180 = (modConfig.ConfigNum("CERFA", "Rotation180", 0) = 1)
+End Function
+
+' Zone de texte a (x, y) mm (coin haut-gauche du texte), largeur w mm.
+' Applique la rotation 180 si configuree : la boite est placee au point
+' symetrique et son contenu retourne.
+Private Function AjouterTexte(ByVal doc As Object, ByVal xmm As Double, ByVal ymm As Double, _
+                              ByVal wmm As Double, ByVal taille As Double, ByVal texte As String) As Object
+    Dim shp As Object, gauche As Double, haut As Double
+    If Rotation180() Then
+        gauche = (PAGE_L_MM - xmm - wmm) * MM_EN_POINTS
+        haut = PAGE_H_MM * MM_EN_POINTS - ymm * MM_EN_POINTS - BOITE_H_PT
+    Else
+        gauche = xmm * MM_EN_POINTS
+        haut = ymm * MM_EN_POINTS
+    End If
+    Set shp = doc.Shapes.AddTextbox(1, gauche, haut, wmm * MM_EN_POINTS, BOITE_H_PT)
+    shp.TextFrame.TextRange.Text = texte
+    shp.TextFrame.TextRange.Font.Name = "Arial"
+    shp.TextFrame.TextRange.Font.Size = taille
+    shp.TextFrame.MarginLeft = 0
+    shp.TextFrame.MarginTop = 0
+    shp.TextFrame.WordWrap = 0
+    shp.Line.Visible = 0        ' msoFalse
+    shp.Fill.Visible = 0
+    If Rotation180() Then shp.Rotation = 180
+    Set AjouterTexte = shp
+End Function
+
+Private Sub AjouterLigne(ByVal doc As Object, ByVal x1 As Double, ByVal y1 As Double, _
+                         ByVal x2 As Double, ByVal y2 As Double, ByVal epais As Double)
+    Dim shp As Object
+    If Rotation180() Then
+        x1 = PAGE_L_MM - x1: x2 = PAGE_L_MM - x2
+        y1 = PAGE_H_MM - y1: y2 = PAGE_H_MM - y2
+    End If
+    Set shp = doc.Shapes.AddLine(x1 * MM_EN_POINTS, y1 * MM_EN_POINTS, x2 * MM_EN_POINTS, y2 * MM_EN_POINTS)
+    shp.Line.Weight = epais
+    shp.Line.ForeColor.RGB = RGB(120, 120, 120)
+End Sub
+
+Private Function NouveauDocumentCerfa(ByRef word As Object) As Object
+    Dim doc As Object
+    Set word = CreateObject("Word.Application")
+    word.Visible = False
+    word.DisplayAlerts = 0
+    Set doc = word.Documents.Add()
+    doc.PageSetup.PaperSize = 7           ' wdPaperA4
+    doc.PageSetup.Orientation = 0         ' portrait
+    doc.PageSetup.TopMargin = 0: doc.PageSetup.BottomMargin = 0
+    doc.PageSetup.LeftMargin = 0: doc.PageSetup.RightMargin = 0
+    Set NouveauDocumentCerfa = doc
+End Function
+
+Private Sub ImprimerOuExporter(ByVal word As Object, ByVal doc As Object, ByVal versPdf As String)
+    If Len(versPdf) > 0 Then
+        doc.ExportAsFixedFormat versPdf, 17
+    Else
+        Dim imprimante As String
+        imprimante = modConfig.Config("CERFA", "Imprimante", "")
+        If Len(imprimante) > 0 Then word.ActivePrinter = imprimante
+        doc.PrintOut Background:=False
+    End If
+End Sub
+
 ' Remplit et imprime la feuille de soins papier.
 ' infos : dictionnaire de la seance. Le PATIENT qui recoit les soins et
 '   l'ASSURE peuvent etre deux personnes differentes : le patient vient de
@@ -87,47 +159,21 @@ End Function
 
 ' Construit et imprime (ou exporte) le document cale
 Private Sub ImprimerDocumentCale(ByVal valeurs As Object, ByVal versPdf As String)
-    Dim word As Object, doc As Object, shp As Object
+    Dim word As Object, doc As Object
     Dim positions As Collection, p As Variant, dx As Double, dy As Double
 
     Set positions = LirePositions()
     LireOffsets dx, dy
-
-    Set word = CreateObject("Word.Application")
-    word.Visible = False
-    word.DisplayAlerts = 0
     On Error GoTo Nettoyage
-    Set doc = word.Documents.Add()
-    doc.PageSetup.TopMargin = 0
-    doc.PageSetup.BottomMargin = 0
-    doc.PageSetup.LeftMargin = 0
-    doc.PageSetup.RightMargin = 0
-
+    Set doc = NouveauDocumentCerfa(word)
     For Each p In positions
         If valeurs.Exists(CStr(p(0))) Then
             If Len(CStr(valeurs(p(0)))) > 0 Then
-                Set shp = doc.Shapes.AddTextbox(1, _
-                    (CDbl(p(1)) + dx) * MM_EN_POINTS, (CDbl(p(2)) + dy) * MM_EN_POINTS, _
-                    CDbl(p(3)) * MM_EN_POINTS, 18)
-                shp.TextFrame.TextRange.Text = CStr(valeurs(p(0)))
-                shp.TextFrame.TextRange.Font.Name = "Arial"
-                shp.TextFrame.TextRange.Font.Size = CDbl(p(4))
-                shp.TextFrame.MarginLeft = 0
-                shp.TextFrame.MarginTop = 0
-                shp.Line.Visible = 0        ' msoFalse
-                shp.Fill.Visible = 0
+                AjouterTexte doc, CDbl(p(1)) + dx, CDbl(p(2)) + dy, CDbl(p(3)), CDbl(p(4)), CStr(valeurs(p(0)))
             End If
         End If
     Next p
-
-    If Len(versPdf) > 0 Then
-        doc.ExportAsFixedFormat versPdf, 17
-    Else
-        Dim imprimante As String
-        imprimante = modConfig.Config("CERFA", "Imprimante", "")
-        If Len(imprimante) > 0 Then word.ActivePrinter = imprimante
-        doc.PrintOut Background:=False
-    End If
+    ImprimerOuExporter word, doc, versPdf
     doc.Close 0
     word.Quit
     Exit Sub
@@ -162,27 +208,16 @@ Public Sub CalageCerfa()
               "avec le decalage en vigueur (dx=" & dx & " mm, dy=" & dy & " mm)." & vbCrLf & vbCrLf & _
               "Imprimer maintenant ?", vbOKCancel + vbInformation, "Calage CERFA") <> vbOK Then Exit Sub
 
-    Dim word As Object, doc As Object, shp As Object, coords As Variant, c As Variant
-    Set word = CreateObject("Word.Application")
-    word.Visible = False
-    word.DisplayAlerts = 0
+    Dim word As Object, doc As Object, coords As Variant, c As Variant
     On Error GoTo Nettoyage
-    Set doc = word.Documents.Add()
-    doc.PageSetup.TopMargin = 0: doc.PageSetup.BottomMargin = 0
-    doc.PageSetup.LeftMargin = 0: doc.PageSetup.RightMargin = 0
+    Set doc = NouveauDocumentCerfa(word)
     coords = Array(Array(20, 20), Array(190, 20), Array(20, 277), Array(190, 277))
     For Each c In coords
-        Set shp = doc.Shapes.AddTextbox(1, (CDbl(c(0)) - 2 + dx) * MM_EN_POINTS, _
-                                        (CDbl(c(1)) - 4 + dy) * MM_EN_POINTS, 12 * MM_EN_POINTS, 16)
-        shp.TextFrame.TextRange.Text = "+"
-        shp.TextFrame.TextRange.Font.Size = 14
-        shp.TextFrame.MarginLeft = 0: shp.TextFrame.MarginTop = 0
-        shp.Line.Visible = 0: shp.Fill.Visible = 0
+        AjouterLigne doc, CDbl(c(0)) - 5 + dx, CDbl(c(1)) + dy, CDbl(c(0)) + 5 + dx, CDbl(c(1)) + dy, 0.5
+        AjouterLigne doc, CDbl(c(0)) + dx, CDbl(c(1)) - 5 + dy, CDbl(c(0)) + dx, CDbl(c(1)) + 5 + dy, 0.5
     Next c
-    Dim imprimante As String
-    imprimante = modConfig.Config("CERFA", "Imprimante", "")
-    If Len(imprimante) > 0 Then word.ActivePrinter = imprimante
-    doc.PrintOut Background:=False
+    AjouterTexte doc, 60 + dx, 8 + dy, 90, 8, "HAUT de la feuille - calage CERFA " & Format$(Now, "dd/mm hh:nn")
+    ImprimerOuExporter word, doc, ""
     doc.Close 0
     word.Quit
     On Error GoTo 0
@@ -213,6 +248,55 @@ Nettoyage:
     word.Quit
     On Error GoTo 0
     MsgBox "Erreur d'impression : " & descErr, vbCritical, "Calage CERFA"
+End Sub
+
+
+' Grille de calage : lignes tous les 10 mm (fines tous les 5 mm) graduees
+' en mm depuis le coin HAUT-GAUCHE, et le NOM de chaque champ imprime a sa
+' position actuelle. Sur une feuille de soins sacrifiee, on lit directement
+' les coordonnees x;y de chaque case et on corrige cerfa_positions.txt.
+Public Sub CalageCerfaGrille()
+    Dim word As Object, doc As Object, positions As Collection, p As Variant
+    Dim dx As Double, dy As Double, i As Long
+    If MsgBox("Placez une feuille de soins SACRIFIEE dans l'imprimante." & vbCrLf & _
+              "Une grille graduee en mm (origine = coin haut-gauche) et le nom de chaque" & vbCrLf & _
+              "champ a sa position actuelle vont s'imprimer, avec le decalage en vigueur" & vbCrLf & _
+              IIf(Rotation180(), "et la rotation de 180 degres ([CERFA] Rotation180=1).", "([CERFA] Rotation180=0).") & vbCrLf & vbCrLf & _
+              "Imprimer maintenant ?", vbOKCancel + vbInformation, "Grille de calage CERFA") <> vbOK Then Exit Sub
+    LireOffsets dx, dy
+    On Error GoTo Nettoyage
+    Set doc = NouveauDocumentCerfa(word)
+    For i = 0 To 210 Step 5
+        AjouterLigne doc, i + dx, dy, i + dx, 297 + dy, IIf(i Mod 10 = 0, 0.5, 0.25)
+        If i Mod 10 = 0 And i > 0 Then AjouterTexte doc, i + 0.5 + dx, 1 + dy, 9, 6, CStr(i)
+    Next i
+    For i = 0 To 297 Step 5
+        AjouterLigne doc, dx, i + dy, 210 + dx, i + dy, IIf(i Mod 10 = 0, 0.5, 0.25)
+        If i Mod 10 = 0 And i > 0 Then AjouterTexte doc, 1 + dx, i + 0.5 + dy, 9, 6, CStr(i)
+    Next i
+    Set positions = LirePositions()
+    For Each p In positions
+        AjouterTexte doc, CDbl(p(1)) + dx, CDbl(p(2)) + dy, CDbl(p(3)), CDbl(p(4)), CStr(p(0))
+    Next p
+    AjouterTexte doc, 40 + dx, 290 + dy, 130, 7, "Grille CERFA " & Format$(Now, "dd/mm/yyyy hh:nn") & _
+        " - dx=" & dx & " dy=" & dy & " - Rotation180=" & IIf(Rotation180(), "1", "0")
+    ImprimerOuExporter word, doc, ""
+    doc.Close 0
+    word.Quit
+    MsgBox "Grille imprimee. Pour chaque case de la liasse, lisez x (mm depuis la gauche) et y" & vbCrLf & _
+           "(mm depuis le haut) du coin haut-gauche de la case, puis reportez-les dans" & vbCrLf & _
+           modConfig.Chemin("Config") & "\cerfa_positions.txt (CHAMP;x;y;largeur;police)." & vbCrLf & vbCrLf & _
+           "Si tout est a l'envers : mettez [CERFA] Rotation180=1 dans config.ini." & vbCrLf & _
+           "Si tout est decale d'un meme ecart : bouton 'Calage imprimante CERFA'.", vbInformation, "Grille de calage CERFA"
+    Exit Sub
+Nettoyage:
+    Dim descErr As String
+    descErr = Err.Description
+    On Error Resume Next
+    If Not doc Is Nothing Then doc.Close 0
+    word.Quit
+    On Error GoTo 0
+    MsgBox "Erreur d'impression : " & descErr, vbCritical, "Grille de calage CERFA"
 End Sub
 
 Private Function LirePositions() As Collection

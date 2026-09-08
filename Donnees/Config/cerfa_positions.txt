@@ -1,8 +1,13 @@
 # Positions d'impression sur la feuille de soins pre-imprimee (cerfa S3110).
 # Format : CHAMP;x_mm;y_mm;largeur_mm;taille_police
 # Origine = coin superieur gauche de la feuille. A CALER sur votre liasse :
-# 1) bouton "Calage imprimante CERFA" (imprime des croix de repere),
-# 2) ajustez les positions ci-dessous d'apres le scan de votre liasse (jalon J6).
+# 1) bouton "Grille de calage CERFA" : imprime sur une liasse sacrifiee une grille
+#    graduee en mm et le nom de chaque champ a sa position actuelle ;
+# 2) lisez sur la grille x (depuis la gauche) et y (depuis le haut) du coin
+#    haut-gauche de chaque case et corrigez les lignes ci-dessous ;
+# 3) si l'ensemble est retourne : [CERFA] Rotation180=1 dans config.ini ;
+#    si l'ensemble est decale d'un meme ecart : bouton "Calage imprimante CERFA".
+# Les valeurs ci-dessous sont INDICATIVES et doivent etre relevees sur la liasse.
 # Un champ absent de ce fichier n'est simplement pas imprime : les rubriques
 # deja pre-imprimees sur vos formulaires personnalises n'ont pas a y figurer.
 # Le nombre de lignes d'actes imprimables est fixe par [CERFA] LignesMax.

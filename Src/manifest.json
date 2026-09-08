@@ -87,6 +87,7 @@
       { "texte": "Honoraires et encaissements", "macro": "UI_Honoraires" },
       { "texte": "Journal des actes",    "macro": "UI_OuvrirJournal" },
       { "texte": "Calage imprimante CERFA", "macro": "UI_CalageCerfa" },
+      { "texte": "Grille de calage CERFA", "macro": "UI_GrilleCerfa" },
       { "texte": "Controle des fiches (ECG)", "macro": "UI_ControleFiches" },
       { "texte": "Importer un agenda (xlsx)", "macro": "UI_ImporterAgenda" },
       { "texte": "Annuler un import d'agenda", "macro": "UI_AnnulerImportAgenda" }
