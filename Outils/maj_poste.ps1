@@ -7,7 +7,12 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File .\maj_poste.ps1
 #
 # Poste medecin relie au secretariat :
-#   .\maj_poste.ps1 -Racine "\\RDC\CabinetCardio" -Role Medecin
+#   .\maj_poste.ps1 -Racine "\\ACCUEIL\CabinetCardio" -Role Medecin
+#
+# Poste unique avec les DEUX parties (domicile, familiarisation) :
+#   .\maj_poste.ps1 -Role Tous
+#   (donnees locales C:\CabinetCardio, Cabinet.xlsm du secretariat sur le
+#    Bureau, Cabinet.dotm + raccourcis Ctrl+Alt+... + cle API du medecin)
 #
 # Le script ne detruit jamais une base de donnees existante : les
 # fichiers deja presents dans la racine sont conserves.
@@ -17,7 +22,7 @@ param(
     [string]$Depot    = 'https://github.com/Mandagoutolivier/claud-ai-cabinet.git',
     [string]$Branche  = 'claude/suivi-dev-logiciel-cabinet-fdjpa9',
     [string]$Racine   = 'C:\CabinetCardio',
-    [ValidateSet('Auto', 'Medecin', 'Secretaire')][string]$Role = 'Auto',
+    [ValidateSet('Auto', 'Medecin', 'Secretaire', 'Tous')][string]$Role = 'Auto',
     # Base patients d'amorcage, utilisee UNIQUEMENT si la racine n'en a pas
     # encore. Les bases nominatives ne sont pas dans GitHub : elles viennent
     # du paquet d'installation du NAS ou du poste secretariat.
@@ -255,7 +260,7 @@ if (-not $racineDistante -and -not (Test-Path $basePoste) -and (Test-Path $BaseI
     Info 'ATTENTION : cette copie est une PHOTO. Ce que vous saisirez ici ne remontera pas au cabinet.'
 }
 
-if (-not $racineDistante -and -not (Test-Path (Join-Path $Racine 'Base'))) {
+if (-not $racineDistante -and -not (Test-Path (Join-Path $Racine 'Base')) -and $Role -eq 'Medecin') {
     # poste autonome (domicile) : on cree d abord la racine locale et ses bases
     Etape "Creation de la racine locale $Racine"
     & $installeur -Role Secretaire -Racine $Racine

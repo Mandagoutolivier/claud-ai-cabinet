@@ -14,7 +14,7 @@
 #
 # Relancable sans risque : ne remplace jamais une base deja presente.
 param(
-    [Parameter(Mandatory = $true)][ValidateSet('Medecin', 'Secretaire')][string]$Role,
+    [Parameter(Mandatory = $true)][ValidateSet('Medecin', 'Secretaire', 'Tous')][string]$Role,
     [Parameter(Mandatory = $true)][string]$Racine,
     [string]$NomPartage = 'CabinetCardio',
     [switch]$SansRelais
@@ -23,6 +23,10 @@ $ErrorActionPreference = 'Stop'
 [System.Threading.Thread]::CurrentThread.CurrentCulture = [Globalization.CultureInfo]::GetCultureInfo('fr-FR')
 
 $paquet = Split-Path $PSScriptRoot -Parent
+# Role 'Tous' (poste unique, ex. domicile) : donnees + Cabinet.xlsm du
+# secretariat ET raccourcis clavier / cle API du medecin sur le meme PC.
+$partSecretaire = ($Role -eq 'Secretaire' -or $Role -eq 'Tous')
+$partMedecin    = ($Role -eq 'Medecin'    -or $Role -eq 'Tous')
 $seed = Join-Path $paquet 'Donnees'
 $erreurs = @()
 function Etape([string]$t) { Write-Host ''; Write-Host "=== $t" -ForegroundColor Cyan }
@@ -71,13 +75,13 @@ if ($wordOuvert -or $excelOuvert) {
     Write-Host 'Word et/ou Excel sont ouverts. Fermez-les COMPLETEMENT (y compris les fenetres reduites) puis relancez.' -ForegroundColor Yellow
     exit 1
 }
-if ($Role -eq 'Medecin' -and -not (Test-Path $Racine)) {
+if ($partMedecin -and -not $partSecretaire -and -not (Test-Path $Racine)) {
     throw "Racine inaccessible : $Racine - le poste secretaire est-il allume et le dossier partage ?"
 }
 
 # ---------------------------------------------------------------- 1. donnees
 Etape "Donnees du cabinet : $Racine"
-if ($Role -eq 'Secretaire') {
+if ($partSecretaire) {
     New-Item -ItemType Directory -Force -Path $Racine | Out-Null
     # copie de tout ce qui n'existe pas encore (jamais d'ecrasement d'une base)
     $n = 0
@@ -137,7 +141,7 @@ Etape 'Installation des modeles Office du poste'
 & (Join-Path $PSScriptRoot 'sync_startup.ps1') -Role $Role
 $startupDotm = Join-Path $env:APPDATA 'Microsoft\Word\STARTUP\Cabinet.dotm'
 if (Test-Path $startupDotm) { Ok "Cabinet.dotm dans le demarrage de Word" } else { Ko 'Cabinet.dotm non installe dans STARTUP' }
-if ($Role -eq 'Secretaire') {
+if ($partSecretaire) {
     $xlsm = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'CabinetCardio\Cabinet.xlsm'
     if (Test-Path $xlsm) {
         Ok "Cabinet.xlsm : $xlsm"
@@ -168,14 +172,14 @@ if ($codeTache -eq 0) {
 }
 
 # ---------------------------------------------------------------- 5. raccourcis clavier (medecin)
-if ($Role -eq 'Medecin' -and -not $SansRelais) {
+if ($partMedecin -and -not $SansRelais) {
     Etape 'Raccourcis clavier Ctrl+Alt+N/D/P/G/V/B et Ctrl+Alt+Maj+C dans Normal.dotm'
     try { & (Join-Path $PSScriptRoot 'installer_relais.ps1'); Ok 'relais installe' }
     catch { Ko "relais non installe : $($_.Exception.Message) (verifier l'acces approuve au modele d'objet VBA, tuto etape 3)" }
 }
 
 # ---------------------------------------------------------------- 6. cle API (medecin)
-if ($Role -eq 'Medecin') {
+if ($partMedecin) {
     Etape 'Cle API Claude'
     $cle = Join-Path $dossierApp 'api.key'
     if (Test-Path $cle) { Ok "cle presente : $cle" }
