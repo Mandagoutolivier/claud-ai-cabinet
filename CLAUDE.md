@@ -55,6 +55,8 @@ poste secrétariat), avec feuilles de soins papier Cerfa S3110 exclusivement
     distance du poste secrétariat (RDC) depuis le poste médecin.
   - `creer_raccourci_deploiement.ps1` : dépose sur le NAS un raccourci
     auto-actualisé vers `deployer_cabinet.ps1`.
+  - `creer_raccourci_domicile.ps1` : raccourci Bureau du PC domicile qui
+    lance la dernière `maj_poste.ps1 -Role Tous` (médecin + secrétariat).
   - `verifier_nas.ps1` : contrôle en lecture seule que le NAS est à jour
     et intégralement déployable.
 - Branche de travail : `claude/suivi-dev-logiciel-cabinet-fdjpa9`.
