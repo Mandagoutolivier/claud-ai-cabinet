@@ -24,7 +24,22 @@ function Sync-SiPlusRecent([string]$source, [string]$dest) {
     }
     if ($doitCopier) {
         New-Item -ItemType Directory -Force -Path (Split-Path $dest -Parent) | Out-Null
-        Copy-Item $source $dest -Force
+        # le fichier peut etre tenu quelques secondes par une instance Office en
+        # cours de fermeture : on reessaie, et on termine une instance sans fenetre
+        $essai = 0
+        while ($true) {
+            try { Copy-Item $source $dest -Force; break }
+            catch {
+                $essai++
+                if ($essai -ge 6) { throw }
+                if ($essai -eq 3) {
+                    $proc = if ($dest -like '*.dotm') { 'WINWORD' } else { 'EXCEL' }
+                    Get-Process $proc -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -eq 0 } |
+                        ForEach-Object { try { Stop-Process -Id $_.Id -Force } catch {} }
+                }
+                Start-Sleep -Seconds 2
+            }
+        }
         Write-Host "mis a jour : $dest"
     } else {
         Write-Host "a jour     : $dest"

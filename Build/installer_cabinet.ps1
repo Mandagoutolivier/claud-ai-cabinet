@@ -132,9 +132,20 @@ try {
     $arg = [string]$Racine
     $word.Run('EcrireCheminRacine', [ref]$arg)
     try { $addin.Delete() } catch {}
-    $word.Quit()
     Ok "chemin.txt ecrit par Word : $Racine"
 } catch { Ko "ecriture de chemin.txt par Word impossible : $($_.Exception.Message)" }
+# Cette instance de Word a charge STARTUP\Cabinet.dotm : il faut qu'elle ait
+# COMPLETEMENT disparu avant de remplacer ce fichier (sinon "en cours
+# d'utilisation par un autre processus").
+Liberer-Com ([ref]$word)
+[GC]::Collect(); [GC]::WaitForPendingFinalizers(); [GC]::Collect()
+$attente = 0
+while ($attente -lt 30 -and (Get-Process WINWORD -ErrorAction SilentlyContinue)) { Start-Sleep -Milliseconds 500; $attente++ }
+# instance invisible qui refuse de mourir (aucune fenetre) : on la termine
+Get-Process WINWORD -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -eq 0 } | ForEach-Object {
+    try { Stop-Process -Id $_.Id -Force; Write-Host "  --  instance Word invisible terminee (PID $($_.Id))" -ForegroundColor Yellow } catch {}
+}
+Start-Sleep -Milliseconds 500
 
 # ---------------------------------------------------------------- 3. modeles du poste
 Etape 'Installation des modeles Office du poste'
