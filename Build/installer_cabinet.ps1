@@ -189,6 +189,24 @@ if ($partMedecin -and -not $SansRelais) {
     catch { Ko "relais non installe : $($_.Exception.Message) (verifier l'acces approuve au modele d'objet VBA, tuto etape 3)" }
 }
 
+# ---------------------------------------------------------------- 5 bis. veilleur ECG (medecin)
+if ($partMedecin) {
+    Etape 'Veilleur ECG (validation de la fenetre patient Resting12Lead)'
+    $veilleur = Join-Path $dossierApp 'ecg_valider_fenetre.ps1'
+    Copy-Item (Join-Path $PSScriptRoot 'ecg_valider_fenetre.ps1') $veilleur -Force
+    # lancement a l'ouverture de session par le dossier Demarrage (sans droits admin)
+    $demarrage = [Environment]::GetFolderPath('Startup')
+    $lanceur = Join-Path $demarrage 'CabinetCardio-ECG.cmd'
+    "@echo off`r`nstart `"`" /min powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$veilleur`"`r`n" | Out-File $lanceur -Encoding ASCII
+    # demarrage immediat si aucune instance ne tourne deja
+    $dejaLance = Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -like '*ecg_valider_fenetre.ps1*' }
+    if (-not $dejaLance) {
+        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$veilleur`"" -WindowStyle Hidden
+    }
+    Ok "veilleur installe ($lanceur) - reglages [ECG] FenetreTitre / TouchesValidation dans config.ini"
+}
+
 # ---------------------------------------------------------------- 6. cle API (medecin)
 if ($partMedecin) {
     Etape 'Cle API Claude'

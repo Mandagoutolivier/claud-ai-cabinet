@@ -19,6 +19,11 @@
   jamais écrasée) : `[COURRIER] PolitesseAuto=0` (décision 08/09 : appel et
   politesse dictés, plus de pré-remplissage ; `AppelAuto=0` est ajouté
   automatiquement).
+- ECG (décision 10/09) : « Arrivé » sur ACCUEIL doit suffire (GDT écrit
+  dans `[ECG] DossierGdt` = `\\AX8_MAX\Mandagout`, à vérifier dans le
+  config.ini d'ACCUEIL) ; sexe (3110) et DDN dans le GDT ; veilleur
+  `Build/ecg_valider_fenetre.ps1` sur AX8_Max (dossier Démarrage) qui envoie
+  `[ECG] TouchesValidation` à la fenêtre `FenetreTitre` de Resting12Lead.
 - Ensuite : recette `RECETTE_AUDIT.md` (chapitres 2, 4, 5 bis) avant usage
   réel du circuit financier.
 
