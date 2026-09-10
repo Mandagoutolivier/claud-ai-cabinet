@@ -36,7 +36,7 @@ $vus = @{}
 while ($true) {
     # relu a chaque tour : un changement de reglage est pris en compte sans relance
     $titre   = LireIni $ini 'ECG' 'FenetreTitre' ''
-    $touches = LireIni $ini 'ECG' 'TouchesValidation' '{TAB}{TAB}'
+    $touches = LireIni $ini 'ECG' 'TouchesValidation' '{TAB}{TAB}{TAB}{TAB}{TAB}{TAB}{UP}{DOWN}'
     $delai   = [int](LireIni $ini 'ECG' 'DelaiFenetreMs' '1500')
     if ($titre.Length -gt 0 -and $touches.Length -gt 0) {
         foreach ($p in Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*$titre*" }) {
