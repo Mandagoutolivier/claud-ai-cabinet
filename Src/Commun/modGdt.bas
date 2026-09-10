@@ -109,10 +109,12 @@ Private Function DdnVersGdt(ByVal ddn As String) As String
     DdnVersGdt = Format$(d, "ddmmyyyy")
 End Function
 
-' Sexe de la fiche -> code GDT : M/H/1/Masculin/Homme -> 1, F/2/Feminin/Femme -> 2
+' Sexe de la fiche -> code GDT (champ 3110). Norme GDT 2.x : 1 = masculin,
+' 2 = feminin ; certains logiciels ECG attendent M/W (GDT 3.x) ou M/F :
+' codes ajustables par [ECG] SexeCodeM / SexeCodeF.
 Private Function SexeVersGdt(ByVal pat As Object) As String
     Select Case modTexte.SexePatient(pat)
-        Case "M": SexeVersGdt = "1"
-        Case "F": SexeVersGdt = "2"
+        Case "M": SexeVersGdt = modConfig.Config("ECG", "SexeCodeM", "1")
+        Case "F": SexeVersGdt = modConfig.Config("ECG", "SexeCodeF", "2")
     End Select
 End Function
