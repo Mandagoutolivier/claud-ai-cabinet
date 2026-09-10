@@ -525,6 +525,12 @@ Public Function GenererDemandesAutomatiques(ByVal docSource As Document) As Stri
     Dim corps As String, demandes As Collection, dm As Object, p As Object, dest As Object
     Dim nouveau As Document, rapport As String, libelle As String
     If Not modConfig.ConfigBool("DERIVEES", "Automatique", True) Then Exit Function
+    ' Mode R12 : les corps des demandes ont ete rendus par l'appel de
+    ' correction ; on assemble les lettres sans API.
+    If modDemandesR12.ModeR12() And modDemandesR12.DemandesDejaAnalysees(docSource) Then
+        GenererDemandesAutomatiques = GenererDemandesR12(docSource)
+        Exit Function
+    End If
     corps = modCourrier.RecupererCorps(docSource)
     Set demandes = DetecterDemandes(corps)
     If demandes.Count = 0 Then
@@ -567,6 +573,45 @@ ErreurDemande:
     modLog.LogErreur "Demande automatique " & dm("Code") & " : " & Err.Description
     rapport = rapport & "- " & dm("Code") & " : ERREUR " & Err.Description & vbCrLf
     Resume SuiteDemande
+End Function
+
+' Lettres de demande assemblees depuis les blocs R12 memorises dans le
+' document (voir modDemandesR12). Meme sortie que le mode Profils.
+Private Function GenererDemandesR12(ByVal docSource As Document) As String
+    Dim demandes As Collection, dm As Object, pat As Object, dest As Object
+    Dim nouveau As Document, rapport As String, libelle As String, memeDoc As Boolean
+    Set demandes = modDemandesR12.DemandesMemorisees(docSource)
+    Set pat = modClaude.PatientDuDocument(docSource)
+    memeDoc = modConfig.ConfigBool("DERIVEES", "MemeDocument", True)
+    If memeDoc Then RetirerDemandesAjoutees docSource
+    If demandes.Count = 0 Or pat Is Nothing Then
+        modLog.LogInfo "Validation : aucune lettre de demande rendue par l'API (mode R12)"
+        Exit Function
+    End If
+    For Each dm In demandes
+        On Error GoTo ErreurDemande
+        If Len(Trim$(dm("Corps"))) > 0 Then
+            Set nouveau = modDemandesR12.AssemblerLettre(docSource, pat, dm, dest, libelle)
+            If memeDoc Then
+                AjouterAuDocument docSource, nouveau
+                nouveau.Close False
+                rapport = rapport & "- " & libelle & " -> " & dest("NomDestinataire") & " : ajoutée à la suite du courrier" & vbCrLf
+            ElseIf modConfig.ConfigBool("DERIVEES", "AutoValider", True) Then
+                modValidation.ValiderDocument nouveau, True
+                rapport = rapport & "- " & libelle & " -> " & dest("NomDestinataire") & " : générée et transmise au secrétariat" & vbCrLf
+            Else
+                rapport = rapport & "- " & libelle & " -> " & dest("NomDestinataire") & " : générée, à relire et valider" & vbCrLf
+            End If
+        End If
+        On Error GoTo 0
+SuiteR12:
+    Next dm
+    GenererDemandesR12 = rapport
+    Exit Function
+ErreurDemande:
+    modLog.LogErreur "Demande R12 " & dm("Cle") & " : " & Err.Description
+    rapport = rapport & "- " & dm("Cle") & " : ERREUR " & Err.Description & vbCrLf
+    Resume SuiteR12
 End Function
 
 ' Ajoute le contenu d'une lettre de demande a la fin du document principal,

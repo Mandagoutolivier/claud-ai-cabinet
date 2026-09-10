@@ -17,6 +17,7 @@
       "Word/modClaude.bas",
       "Word/modDemandes.bas",
       "Word/modDerivees.bas",
+      "Word/modDemandesR12.bas",
       "Word/modValidation.bas",
       "Word/modEcg.bas",
       "Word/modGras.bas",

@@ -24,6 +24,10 @@
   config.ini d'ACCUEIL) ; sexe (3110) et DDN dans le GDT ; veilleur
   `Build/ecg_valider_fenetre.ps1` sur AX8_Max (dossier Démarrage) qui envoie
   `[ECG] TouchesValidation` à la fenêtre `FenetreTitre` de Resting12Lead.
+- Lettres dérivées (décision 10/09) : architecture R12 = UN appel API à la
+  correction rend courrier + blocs `DEMANDE_DESTINATION` (`modDemandesR12`,
+  prompt `Config\prompts\demandes_r12.txt`, `[DERIVEES] Mode=R12`) ; le VBA
+  assemble les lettres à la finalisation. `Mode=Profils` = ancien mode.
 - Ensuite : recette `RECETTE_AUDIT.md` (chapitres 2, 4, 5 bis) avant usage
   réel du circuit financier.
 

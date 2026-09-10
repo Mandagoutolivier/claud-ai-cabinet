@@ -1,0 +1,26 @@
+LETTRES DE DEMANDE COMPLÉMENTAIRES (après le corps du courrier principal) :
+Ce format prime sur la consigne ci-dessus de répondre uniquement avec le texte corrigé. Retourne d'abord le corps corrigé du courrier principal entre les balises ---CORPS_COURRIER--- et ---FIN_CORPS_COURRIER---, sans rien d'autre à l'intérieur.
+Après ce bloc, produis un bloc de demande complémentaire uniquement lorsqu'une décision explicite, actuelle ou future, de prescrire, programmer, faire réaliser, adresser, orienter, diriger ou confier le patient est réellement exprimée dans le courrier.
+Une simple mention historique, un résultat d'examen, une possibilité discutée, une hypothèse, une formulation conditionnelle ou un projet non décidé ne doit déclencher aucun bloc.
+Sont des formulations explicites de demande, lorsqu'elles sont liées à l'examen ou à l'avis dans le même passage : Je prévois, Je programme, Je lui demande, Je complète par, Je propose la réalisation de, Merci de réaliser, Nous allons l'adresser, Nous allons le/la diriger, Je l'oriente, Je le/la confie, Je prescris.
+Pour une ablation, une exploration électrophysiologique, un avis rythmologique, un rythmologue ou le CCN, ne produis une demande que si la décision d'orientation est explicitement exprimée dans la même phrase ou le même passage immédiat.
+Ne produis pas de bloc pour un examen réalisé au cabinet par le médecin lui-même : échographie cardiaque, échographie transthoracique, ETT, échoscopie, Holter rythmique, Holter ECG, Holter tensionnel, MAPA.
+Regroupe dans un même bloc les examens ayant exactement la même clé de destination ; produis des blocs distincts pour des destinations différentes.
+Utilise exclusivement les clés de destination fournies ci-dessous ; utilise A_COMPLETER si aucune clé ne convient ou si le correspondant précis n'est pas connu.
+Pour une consultation, un avis ou un geste thérapeutique, si le texte ne cite qu'un établissement, un centre, un service ou un acronyme institutionnel sans nommer de médecin correspondant, utilise CLE_DESTINATION=A_COMPLETER.
+
+Clés de destination (libellé : clé, destinataire habituel du cabinet entre parenthèses) :
+{{REGLES_DESTINATION}}
+
+Rédaction du corps d'une demande, dans le style réel du médecin (une phrase par ligne, phrases courtes) :
+Une demande d'examen commence par : Merci de réaliser un/une NOM DE L'EXAMEN à Monsieur/Madame {{PAT_PRENOM}} {{PAT_NOM}}, [âge si présent], [terrain ou motif réel accolé au patient].
+Une demande de consultation spécialisée ou d'hospitalisation commence par : Merci de prendre en charge Monsieur/Madame {{PAT_PRENOM}} {{PAT_NOM}}, [âge], pour [motif].
+Les lignes suivantes reprennent uniquement les faits utiles au confrère pour cette demande : antécédents ou terrain, symptômes, traitement (noms de médicaments en MAJUSCULES sans virgule), examen clinique, électrocardiogramme, examens antérieurs pertinents, consigne d'arrêt ou de reprise d'un médicament si elle figure dans le courrier. Ne recopie pas le courrier principal.
+Interdit dans une demande : « Je revois », « pour un contrôle », « Au total », la conclusion du bilan, « Je te tiens informé », le plan de suivi. Ne qualifie pas le bilan de rassurant dans une lettre qui demande de le compléter.
+Dernière ligne : la question précise posée au confrère (« Merci de confirmer l'absence de coronaropathie. », « Merci de vérifier l'absence d'évolutivité. », « Merci de l'évaluer. »), sans autre phrase de courtoisie.
+Le corps ne contient ni adresse, ni destinataire, ni formule d'appel, ni formule de politesse, ni signature : elles existent déjà dans le document.
+N'invente aucune information absente du courrier. Les balises {{...}} sont recopiées strictement à l'identique.
+
+Chaque demande respecte exactement ce format :
+{{FORMAT_DEMANDE}}
+N'écris aucun bloc DEMANDE_DESTINATION si aucune demande éligible n'est explicitement décidée dans le courrier. N'écris rien en dehors du bloc CORPS_COURRIER et des éventuels blocs DEMANDE_DESTINATION.

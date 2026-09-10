@@ -247,23 +247,50 @@ Public Function CorrigerDocument(ByVal doc As Document, ByVal silencieux As Bool
         modLog.LogInfo "Envoi force malgre scan residuel : " & Replace(problemes, vbCrLf, " / ")
     End If
 
-    ' 3. appel API
+    ' 3. appel API. Mode R12 : le meme appel rend aussi les corps des lettres
+    '    de demande (blocs DEMANDE_DESTINATION), assemblees a la finalisation.
+    Dim modeR12 As Boolean, systeme As String, demandes As Collection, dm As Object
+    modeR12 = modDemandesR12.ModeR12()
+    systeme = ChargerPrompt("correction.txt")
+    If modeR12 Then systeme = systeme & modDemandesR12.ConsignesDemandes()
     Set prog = New ufProgression
     prog.Show vbModeless
     prog.Definir "Correction du courrier en cours..."
     On Error GoTo ErreurApi
-    reponse = AppelerClaude(ChargerPrompt("correction.txt"), anonyme)
+    reponse = AppelerClaude(systeme, anonyme)
+    If modeR12 Then
+        Set demandes = modDemandesR12.ExtraireDemandes(reponse)
+        If demandes.Count = 0 And modConfig.ConfigBool("DERIVEES", "SecondAppel", True) Then
+            If modDemandes.DetecterDemandes(anonyme).Count > 0 Then
+                prog.Definir "Lettres de demande en cours..."
+                Set demandes = modDemandesR12.DemandesParSecondAppel(anonyme)
+            End If
+        End If
+    End If
     On Error GoTo Erreur
     Unload prog
     Set prog = Nothing
 
-    ' 4. verification des balises au retour
+    ' 4. verification des balises au retour (courrier et demandes)
     problemes = modAnonymise.VerifierBalisesRetour(reponse, ctx, anonyme)
     If Len(problemes) > 0 Then
         modFichiers.EcrireTexteUTF8 modConfig.Chemin("Logs") & "\reponse_rejetee.txt", reponse
         MsgBox "La reponse de l'API a altere des balises d'identite ; le texte n'a PAS ete insere." & _
                vbCrLf & problemes, vbCritical, "Cabinet"
         Exit Function
+    End If
+    If modeR12 Then
+        reponse = modDemandesR12.ExtraireCorps(reponse)
+        For Each dm In demandes
+            problemes = modAnonymise.VerifierBalisesRetour(dm("Corps"), ctx, anonyme)
+            If Len(problemes) > 0 Then
+                modLog.LogErreur "Demande R12 " & dm("Cle") & " rejetee (balises) : " & Replace(problemes, vbCrLf, " / ")
+                dm("Corps") = ""
+            Else
+                dm("Corps") = modAnonymise.Reinjecter(dm("Corps"), ctx)
+            End If
+        Next dm
+        modDemandesR12.MemoriserDemandes doc, demandes
     End If
 
     ' 5. reinjection + archivage du brouillon + remplacement (annulable)
