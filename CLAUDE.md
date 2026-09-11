@@ -24,6 +24,11 @@
   config.ini d'ACCUEIL) ; sexe (3110) et DDN dans le GDT ; veilleur
   `Build/ecg_valider_fenetre.ps1` sur AX8_Max (dossier Démarrage) qui envoie
   `[ECG] TouchesValidation` à la fenêtre `FenetreTitre` de Resting12Lead.
+  Pont SQL (11/09) : le même veilleur écrit chaque nouvel IMPORT.GDT dans
+  la table `patinfo` (base `ecgcenter`, login DMSNIS de `SetSQLInfo.ini`)
+  sur SQL Server Express local d'AX8_Max, préparée une fois par
+  `Build/installer_ecg_sql.ps1` (admin) ; activer par `[ECG] SqlActif=1`
+  et cocher « Connection Système Info DMS » dans Resting12Lead.
 - Lettres dérivées (décision 10/09) : architecture R12 = UN appel API à la
   correction rend courrier + blocs `DEMANDE_DESTINATION` (`modDemandesR12`,
   prompt `Config\prompts\demandes_r12.txt`, `[DERIVEES] Mode=R12`) ; le VBA

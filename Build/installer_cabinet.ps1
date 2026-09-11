@@ -194,17 +194,19 @@ if ($partMedecin) {
     Etape 'Veilleur ECG (validation de la fenetre patient Resting12Lead)'
     $veilleur = Join-Path $dossierApp 'ecg_valider_fenetre.ps1'
     Copy-Item (Join-Path $PSScriptRoot 'ecg_valider_fenetre.ps1') $veilleur -Force
+    Copy-Item (Join-Path $PSScriptRoot 'installer_ecg_sql.ps1') (Join-Path $dossierApp 'installer_ecg_sql.ps1') -Force -ErrorAction SilentlyContinue
     # lancement a l'ouverture de session par le dossier Demarrage (sans droits admin)
     $demarrage = [Environment]::GetFolderPath('Startup')
     $lanceur = Join-Path $demarrage 'CabinetCardio-ECG.cmd'
     "@echo off`r`nstart `"`" /min powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$veilleur`"`r`n" | Out-File $lanceur -Encoding ASCII
-    # demarrage immediat si aucune instance ne tourne deja
-    $dejaLance = Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -like '*ecg_valider_fenetre.ps1*' }
-    if (-not $dejaLance) {
-        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$veilleur`"" -WindowStyle Hidden
-    }
-    Ok "veilleur installe ($lanceur) - reglages [ECG] FenetreTitre / TouchesValidation dans config.ini"
+    # relance du veilleur avec la version qui vient d'etre copiee : l'instance
+    # precedente (ancien code) est arretee, puis une nouvelle est lancee
+    Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -like '*ecg_valider_fenetre.ps1*' } |
+        ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$veilleur`"" -WindowStyle Hidden
+    Ok "veilleur installe et (re)lance ($lanceur) - reglages [ECG] FenetreTitre / TouchesValidation / Sql* dans config.ini"
+    Info "pont SQL vers Resting12Lead : preparer la base une fois avec $dossierApp\installer_ecg_sql.ps1 (administrateur), puis [ECG] SqlActif=1"
 }
 
 # ---------------------------------------------------------------- 6. cle API (medecin)
