@@ -33,6 +33,12 @@
   correction rend courrier + blocs `DEMANDE_DESTINATION` (`modDemandesR12`,
   prompt `Config\prompts\demandes_r12.txt`, `[DERIVEES] Mode=R12`) ; le VBA
   assemble les lettres à la finalisation. `Mode=Profils` = ancien mode.
+- Données sur le NAS (décision 12/09) : la racine doit être un dossier
+  partagé du DS224 (`\\DS224\CabinetCardio`, RAID + Hyper Backup vers le
+  NAS du domicile), plus jamais sur un PC. Migration par
+  `Outils/migrer_racine_nas.ps1` (ACCUEIL puis AX8_Max) ;
+  `deployer_cabinet.ps1` détecte `$RacineNas\Base` et bascule les deux
+  postes dessus (paquet d'installation déposé dans `\\DS224\CabinetCardio\_Installation`).
 - Ensuite : recette `RECETTE_AUDIT.md` (chapitres 2, 4, 5 bis) avant usage
   réel du circuit financier.
 
@@ -69,6 +75,8 @@ poste secrétariat), avec feuilles de soins papier Cerfa S3110 exclusivement
     distance du poste secrétariat (RDC) depuis le poste médecin.
   - `creer_raccourci_deploiement.ps1` : dépose sur le NAS un raccourci
     auto-actualisé vers `deployer_cabinet.ps1`.
+  - `migrer_racine_nas.ps1` : déplace la racine des données vers le NAS
+    et ré-enregistre le poste (copie vérifiée, ancien dossier renommé).
   - `creer_raccourci_domicile.ps1` : raccourci Bureau du PC domicile qui
     lance la dernière `maj_poste.ps1 -Role Tous` (médecin + secrétariat).
   - `verifier_nas.ps1` : contrôle en lecture seule que le NAS est à jour

@@ -22,6 +22,10 @@ param(
     # "partage cree : \\ACCUEIL\CabinetCardio"). Plusieurs candidats acceptes,
     # separes par ; - le premier qui repond est retenu.
     [string]$PosteSecretariat  = 'ACCUEIL;RDC',
+    # Racine des donnees sur le NAS (dossier partage dedie, sauvegarde RAID +
+    # replication). Si "$RacineNas\Base" existe, les DEUX postes travaillent
+    # dessus et le PC secretariat n'heberge plus rien (voir migrer_racine_nas.ps1).
+    [string]$RacineNas         = '\\DS224\CabinetCardio',
     [string]$RacineMedecin     = '',
     [string]$RacineSecretariat = 'C:\CabinetCardio',
     [switch]$SansConstruction,           # reutilise les modeles deja construits
@@ -133,12 +137,20 @@ if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
 Ok 'git present'
 # choix du poste secretariat parmi les candidats
 $candidats = $PosteSecretariat -split ';' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+$modeNas = $false
+if (-not $RacineMedecin -and $RacineNas -and (Test-Path (Join-Path $RacineNas 'Base'))) {
+    $modeNas = $true
+    $RacineMedecin = $RacineNas
+    $RacineSecretariat = $RacineNas
+    $PosteSecretariat = $candidats[0]
+    Ok "donnees sur le NAS : $RacineNas (les deux postes)"
+}
 if (-not $RacineMedecin) {
     foreach ($c in $candidats) {
         if (Test-Path "\\$c\CabinetCardio") { $PosteSecretariat = $c; $RacineMedecin = "\\$c\CabinetCardio"; break }
     }
     if (-not $RacineMedecin) { $PosteSecretariat = $candidats[0]; $RacineMedecin = "\\$($candidats[0])\CabinetCardio" }
-} else {
+} elseif (-not $modeNas) {
     $PosteSecretariat = ($RacineMedecin -replace '^\\\\', '') -replace '\\.*$', ''
 }
 if (-not (Test-Path $RacineMedecin)) {
@@ -252,6 +264,7 @@ if ($SansSecretariat) {
 } else {
     Etape "Poste secretariat ($PosteSecretariat) : depot du paquet"
     $partageSecretariat = "\\$PosteSecretariat\CabinetCardio"
+    if ($modeNas) { $partageSecretariat = $RacineNas }
     if (-not (Test-Path $partageSecretariat)) {
         Ko "partage $partageSecretariat inaccessible : impossible de deposer le paquet"
     } else {
@@ -276,6 +289,7 @@ pause
         # le Planificateur de taches accessible a distance, non garanti)
         Etape "Poste secretariat ($PosteSecretariat) : tentative d'installation a distance"
         try {
+            if ($modeNas) { throw "donnees sur le NAS : l'installation se lance sur le poste lui-meme" }
             $ancien = $ErrorActionPreference; $ErrorActionPreference = 'Stop'
             $accessible = Test-WSMan -ComputerName $PosteSecretariat -ErrorAction Stop
             $ErrorActionPreference = $ancien
@@ -290,7 +304,7 @@ pause
             $ErrorActionPreference = 'Stop'
             Info "installation a distance impossible ($($_.Exception.Message))"
             Info "ACTION MANUELLE REQUISE UNE FOIS : sur le PC $PosteSecretariat, ouvrir"
-            Info "  \\$PosteSecretariat\CabinetCardio\_Installation\installer_secretariat.cmd"
+            Info "  $partageSecretariat\_Installation\installer_secretariat.cmd"
             Info "et double-cliquer (fermer Word/Excel sur ce poste avant)."
         }
     }

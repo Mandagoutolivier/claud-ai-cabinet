@@ -100,7 +100,10 @@ if ($partSecretaire) {
     Copy-Item (Join-Path $PSScriptRoot 'sync_startup.ps1') (Join-Path $Racine 'Modeles\Deploy\sync_startup.ps1') -Force
     Ok 'modeles Cabinet.dotm / Cabinet.xlsm deposes dans Modeles\Deploy'
 
-    # partage reseau (necessite les droits administrateur)
+    # partage reseau (necessite les droits administrateur) - inutile quand la
+    # racine est deja un partage (NAS)
+    if ($Racine.StartsWith('\\')) { Ok "racine sur un partage reseau ($Racine) : pas de partage local a creer" }
+    else {
     $estAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     $partageExiste = $null -ne (Get-SmbShare -Name $NomPartage -ErrorAction SilentlyContinue)
     if ($partageExiste) { Ok "partage \\$env:COMPUTERNAME\$NomPartage deja present" }
@@ -115,6 +118,7 @@ if ($partSecretaire) {
     } else {
         Write-Host "  --  pas de droits administrateur : partagez le dossier a la main (tuto) ou relancez PowerShell en administrateur." -ForegroundColor Yellow
         Write-Host "      Chemin a communiquer au poste medecin : \\$env:COMPUTERNAME\$NomPartage"
+    }
     }
 }
 $deploy = Join-Path $Racine 'Modeles\Deploy'
