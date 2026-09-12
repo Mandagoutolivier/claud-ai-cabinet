@@ -43,8 +43,32 @@ Public Function Racine() As String
     If InStr(t, vbLf) > 0 Then t = Left$(t, InStr(t, vbLf) - 1)
     t = Trim$(t)
     If Right$(t, 1) = "\" Then t = Left$(t, Len(t) - 1)
+    t = SuivreRedirection(t)
     mRacine = t
     Racine = mRacine
+End Function
+
+' Une racine DEPLACEE (migration vers le NAS) contient RACINE_DEPLACEE.txt
+' dont la premiere ligne est le nouveau chemin : tout poste encore
+' enregistre sur l'ancienne copie est redirige, et son chemin.txt corrige.
+Private Function SuivreRedirection(ByVal racine As String) As String
+    Dim marqueur As String, t As String, n As Long
+    SuivreRedirection = racine
+    For n = 1 To 3
+        marqueur = racine & "\RACINE_DEPLACEE.txt"
+        If Not modFichiers.FichierExiste(marqueur) Then Exit Function
+        t = Replace(modFichiers.LireTexteUTF8(marqueur), vbCr, vbLf)
+        If InStr(t, vbLf) > 0 Then t = Left$(t, InStr(t, vbLf) - 1)
+        t = Trim$(t)
+        If Right$(t, 1) = "\" Then t = Left$(t, Len(t) - 1)
+        If Len(t) = 0 Or StrComp(t, racine, vbTextCompare) = 0 Then Exit Function
+        If Not modFichiers.DossierExiste(t) Then Exit Function
+        racine = t
+        SuivreRedirection = racine
+        On Error Resume Next
+        modFichiers.EcrireTexteAnsi Environ$("APPDATA") & "\CabinetCardio\chemin.txt", racine & vbCrLf
+        On Error GoTo 0
+    Next n
 End Function
 
 Public Function Chemin(ByVal sousDossier As String) As String

@@ -35,8 +35,11 @@
   assemble les lettres à la finalisation. `Mode=Profils` = ancien mode.
 - Données sur le NAS (décision 12/09) : la racine doit être un dossier
   partagé du DS224 (`\\DS224\CabinetCardio`, RAID + Hyper Backup vers le
-  NAS du domicile), plus jamais sur un PC. Migration par
-  `Outils/migrer_racine_nas.ps1` (ACCUEIL puis AX8_Max) ;
+  NAS du domicile), plus jamais sur un PC. Migration par le
+  raccourci « Deployer le cabinet » (ACCUEIL allumé, Word/Excel fermés :
+  il propose la copie vérifiée puis pose `RACINE_DEPLACEE.txt` dans
+  l'ancienne racine, que `modConfig.Racine` suit automatiquement), ou par
+  `Outils/migrer_racine_nas.ps1` ;
   `deployer_cabinet.ps1` détecte `$RacineNas\Base` et bascule les deux
   postes dessus (paquet d'installation déposé dans `\\DS224\CabinetCardio\_Installation`).
 - Ensuite : recette `RECETTE_AUDIT.md` (chapitres 2, 4, 5 bis) avant usage

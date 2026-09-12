@@ -67,6 +67,9 @@ if ($Role -ne 'Medecin') {
     Ok "tous les fichiers sont presents sur le NAS a l'identique"
     New-Item -ItemType Directory -Force -Path (Join-Path $RacineNas 'Base\locks') | Out-Null
 
+    # marqueur de redirection : tout poste encore enregistre sur l'ancienne
+    # racine est renvoye vers le NAS par le logiciel lui-meme
+    "$RacineNas`r`nDonnees deplacees le $(Get-Date -Format 'dd/MM/yyyy HH:mm') vers le NAS.`r`n" | Out-File (Join-Path $AncienneRacine 'RACINE_DEPLACEE.txt') -Encoding UTF8
     if (-not $AncienneRacine.StartsWith('\\')) {
         Etape 'Neutralisation de l ancienne racine locale'
         $ancienNom = "$AncienneRacine`_ANCIEN_$(Get-Date -Format yyyyMMdd)"

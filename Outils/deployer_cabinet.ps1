@@ -153,6 +153,44 @@ if (-not $RacineMedecin) {
 } elseif (-not $modeNas) {
     $PosteSecretariat = ($RacineMedecin -replace '^\\\\', '') -replace '\\.*$', ''
 }
+
+# ------------------------------------------------------------ migration vers le NAS
+# Les donnees sont encore sur le PC secretariat et le dossier partage du NAS
+# existe (cree dans DSM) mais est vide : on propose de migrer ICI, depuis le
+# poste medecin qui voit les deux. Copie integrale verifiee, puis marqueur
+# RACINE_DEPLACEE.txt dans l'ancienne racine : tout poste encore enregistre
+# dessus (ACCUEIL) est redirige automatiquement par le logiciel.
+if (-not $modeNas -and $RacineNas -and (Test-Path $RacineMedecin) -and (Test-Path (Join-Path $RacineMedecin 'Base\Patients.xlsx'))) {
+    $parentNas = Split-Path $RacineNas -Parent
+    if ((Test-Path $RacineNas) -or (Test-Path $parentNas)) {
+        Etape "Migration des donnees vers le NAS ($RacineNas)"
+        Info "Les donnees du cabinet sont sur $RacineMedecin. Le NAS est joignable."
+        Info "Word et Excel doivent etre FERMES sur le poste secretariat pendant la copie."
+        $rep = Read-Host "Migrer maintenant les donnees vers $RacineNas ? (O/N)"
+        if ($rep -match '^[oOyY]') {
+            New-Item -ItemType Directory -Force -Path $RacineNas | Out-Null
+            robocopy $RacineMedecin $RacineNas /E /XO /XD locks _Installation /XF *.lock RACINE_DEPLACEE.txt /R:3 /W:2 /NP /NFL /NDL
+            if ($LASTEXITCODE -ge 8) { throw "copie vers le NAS echouee (code robocopy $LASTEXITCODE) : rien n'a ete bascule." }
+            $global:LASTEXITCODE = 0
+            $manquants = 0
+            foreach ($f in Get-ChildItem $RacineMedecin -Recurse -File | Where-Object { $_.FullName -notmatch '\\locks\\|\\_Installation\\|\.lock$|RACINE_DEPLACEE\.txt$' }) {
+                $rel = $f.FullName.Substring($RacineMedecin.Length + 1)
+                $d = Join-Path $RacineNas $rel
+                if (-not (Test-Path $d) -or (Get-Item $d).Length -ne $f.Length) { $manquants++; Write-Host "  !!  $rel" -ForegroundColor Red }
+            }
+            if ($manquants -gt 0) { throw "$manquants fichier(s) different(s) sur le NAS : l'ancienne racine reste en service, relancez apres avoir ferme Word/Excel sur le secretariat." }
+            New-Item -ItemType Directory -Force -Path (Join-Path $RacineNas 'Base\locks') | Out-Null
+            "$RacineNas`r`nDonnees deplacees le $(Get-Date -Format 'dd/MM/yyyy HH:mm') vers le NAS. Ce dossier n'est plus utilise : le logiciel redirige automatiquement vers la nouvelle racine.`r`n" |
+                Out-File (Join-Path $RacineMedecin 'RACINE_DEPLACEE.txt') -Encoding UTF8
+            Ok "donnees copiees et verifiees sur $RacineNas ; ancienne racine marquee comme deplacee"
+            $modeNas = $true
+            $RacineMedecin = $RacineNas
+            $RacineSecretariat = $RacineNas
+        } else {
+            Info 'migration reportee : les donnees restent sur le poste secretariat'
+        }
+    }
+}
 if (-not (Test-Path $RacineMedecin)) {
     throw ("Racine du secretariat inaccessible : $RacineMedecin (candidats testes : $($candidats -join ', '))`n" +
            "Le poste secretariat est-il INSTALLE (installer_cabinet.ps1 -Role Secretaire sur ce PC) et allume ?`n" +
